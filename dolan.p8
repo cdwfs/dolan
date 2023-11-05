@@ -81,7 +81,7 @@ function clear_matches(skip_fx)
    if n>=3 then -- x matched
     mtotal+=1
     for mx=x,x+n-1 do
-     row[mx]=b.empty_sid
+     b.yoffs[y][mx]=-1
     end
    end
    n=1 -- find y match
@@ -94,13 +94,21 @@ function clear_matches(skip_fx)
    if n>=3 then -- y matched
     mtotal+=1
     for my=y,y+n-1 do
-     b.grid[my][x]=b.empty_sid
+     b.yoffs[my][x]=-1
     end
    end
    ::match_end::
    end
  end
  if mtotal>0 then
+  for y=1,b.h do
+   for x=1,b.w do
+    if b.yoffs[y][x]==-1 then
+     b.grid[y][x]=b.empty_sid
+     b.yoffs[y][x]=0
+    end
+   end
+  end
   if not skip_fx then
    sfx(s_dope1,0)
   end
