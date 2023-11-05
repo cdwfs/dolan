@@ -19,6 +19,7 @@ function init_board()
   empty_sid=16,
   grid={},
   yoffs={},
+  pgems={},
   selecting=false,
   settling=false,
   clampx=function(this,x)
@@ -104,6 +105,15 @@ function clear_matches(skip_fx)
   for y=1,b.h do
    for x=1,b.w do
     if b.yoffs[y][x]==-1 then
+     if not skip_fx then
+      add(b.pgems,{
+       s=b.grid[y][x],
+       px=b.bx+8*x,
+       py=b.by+8*y,
+       vx=-3+rnd(2),
+       vy=-10+rnd(4),
+      })
+     end
      b.grid[y][x]=b.empty_sid
      b.yoffs[y][x]=0
     end
@@ -144,6 +154,20 @@ function settle_grid()
  end
 end
 
+function update_pgems()
+ local ing=b.pgems
+ local outg={}
+ for g in all(ing) do
+  g.px+=g.vx
+  g.py+=g.vy
+  g.vy+=1
+  if g.px>-8 and g.py<128 then
+   add(outg,g)
+  end
+ end
+ b.pgems=outg
+end
+
 function _init()
  cls(0)
  init_board()
@@ -151,6 +175,7 @@ end
 
 function _update60()
  settle_grid()
+ update_pgems()
  -- update cursor
  if btnp(🅾️) then
   if not b.selecting
@@ -214,6 +239,9 @@ function _draw()
  palt(0x0040)
  spr(f[1+((t\4)%4)],8+8*b.cx,56,2,2)
  palt()
+ for g in all(b.pgems) do
+  spr(g.s,g.px,g.py)
+ end
  print(100*stat(1).."%",1,1,7)
 end
 -->8
