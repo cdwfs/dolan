@@ -214,6 +214,46 @@ s_click=0
 s_select=1
 s_cancel=2
 s_dope1=3
+-->8
+function vardump(value,depth,key)
+ local line_prefix=""
+ local spaces=""
+ if key~=nil then
+  line_prefix="["..key.."] = "
+ end
+ if depth==nil then
+  depth=0
+ else
+  depth+=1
+  for i=1,depth do
+   spaces=spaces.." "
+  end
+ end
+ local t=type(value)
+ if t=="table" then
+  local mtable=getmetatable(value)
+  if mtable then
+   printh(spaces.."(metatable) ")
+   value=mtable
+  else
+   printh(spaces..line_prefix.."(table) ")
+  end
+  for k,v in pairs(value) do
+   vardump(v,depth,k)
+  end
+ elseif t=="function" then
+  printh(spaces..line_prefix..
+         "(function)")
+ elseif t=="thread"
+     or t=="userdata"
+     or value==nil then
+  printh(spaces..tostr(value))
+ else
+  printh(spaces..line_prefix..
+         "("..t..") "..
+         tostr(value))
+ end
+end
 __gfx__
 00000000955299999999999999999999999999994444441444444444999944144d49499977000077700007770000777000077700999999999999999999999999
 0000000095555999999999999552999999999999477bbbb4454444549999bbb44779229970000007700000007000000000000000999999999999999999999999
