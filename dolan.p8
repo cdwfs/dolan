@@ -8,6 +8,8 @@ function init_board()
  b={
   w=10,
   h=7,
+  bx=24,
+  by=72,
   cursor_sids={9,10,11,12,12,11,10},
   cst=0,
   cx=1,
@@ -186,9 +188,9 @@ t=0
 f={1,33,3,35}
 function _draw()
  map(0,0)
- local by=72
+ local by=b.by
  for y=1,b.h do
-  local bx=24
+  local bx=b.bx
   for x=1,b.w do
    spr(b.grid[y][x],bx,
     by-b.yoffs[y][x])
@@ -196,8 +198,10 @@ function _draw()
   end
   by+=8
  end
- spr(b:curs(),16+8*b.cx,64+8*b.cy,
-   1,1,b.cf)
+ spr(b:curs(),
+     b.bx+8*(b.cx-1),
+     b.by+8*(b.cy-1),
+     1,1,b.cf)
  t=t+1
  palt(0x0040)
  spr(f[1+((t\4)%4)],8+8*b.cx,56,2,2)
