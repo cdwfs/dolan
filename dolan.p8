@@ -74,9 +74,7 @@ function clear_matches(skip_fx)
    if s==b.empty_sid then goto match_end end
    local n=1 -- find x match
    for mx=x+1,b.w do
-    if row[mx]~=s then
-     break
-    end
+    if (row[mx]~=s) break
     n+=1
    end
    if n>=3 then -- x matched
@@ -87,9 +85,7 @@ function clear_matches(skip_fx)
    end
    n=1 -- find y match
    for my=y+1,b.h do
-    if b.grid[my][x]~=s then
-     break
-    end
+    if (b.grid[my][x]~=s) break
     n+=1
    end
    if n>=3 then -- y matched
@@ -119,9 +115,7 @@ function clear_matches(skip_fx)
     end
    end
   end
-  if not skip_fx then
-   sfx(s_dope1,0)
-  end
+  if (not skip_fx) sfx(s_dope1,0)
   b.settling=true
  end
  return mtotal
@@ -253,15 +247,20 @@ function _draw()
  print(100*stat(1).."%",1,1,7)
 end
 -->8
+-- globals
 function clamp(x,low,hi)
  return max(low,min(hi,x))
 end
--->8
+
+-- sounds
 s_click=0
 s_select=1
 s_cancel=2
 s_dope1=3
+-- sprite flags
+sf_rock=1
 -->8
+-- debug
 function vardump(value,depth,key)
  local line_prefix=""
  local spaces=""
@@ -527,6 +526,7 @@ ffffffffffffffff55f55fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 5555555555555555551544d442222224422222242bbbbbb448888884422222242bbbbbb44aaaaaa4488888844888888442222224444415555555555555555555
 55555555555555555555d44442222224422222244bbbbbb448888884422222244bbbbbb44aaaaaa4488888844888888442222224424455555555555555555555
 55555555555555555554144444d4444444d44444445444454444e44444d444444454444544444e444444e4444444e44444d44444444145555555555555555555
+
 __gff__
 0000000000000001010000000000000000000000000000010101000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
