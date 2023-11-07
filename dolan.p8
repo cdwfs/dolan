@@ -16,6 +16,18 @@ function init_board()
   crs_t=0,
   cx=1,
   cy=1,
+  -- use mi=2*dx+dy+3 to index
+  --   l=1  u=2  z=3  d=4  r=5
+  -- 6 and 7 are tile offsets to
+  -- rock nw corner.
+  -- 8 is cursor size in pixels
+  rock_mdists={
+   [sid_rock1]={1,1,0,1,1,0,0,7},
+   [sid_rock2a]={1,1,0,2,2,0,0,15},
+   [sid_rock2b]={2,1,0,2,1,-1,0,15},
+   [sid_rock2c]={1,2,0,1,2,0,-1,15},
+   [sid_rock2d]={2,2,0,1,1,-1,-1,15},
+  },
   grid={},
   yoffs={},
   pgems={},
@@ -39,8 +51,7 @@ function init_board()
  }
  -- populate grid
  for y=1,b.h do
-  local row={}
-  local yoffs={}
+  local row,yoffs={},{}
   for x=1,b.w do
    add(row,rnd(sid_gems))
    add(yoffs,0)
@@ -60,6 +71,12 @@ function init_board()
    end
   end
  end
+ -- todo: place rocks
+ b.grid[1][3]=sid_rock1
+ b.grid[1][6]=sid_rock2a
+ b.grid[1][7]=sid_rock2b
+ b.grid[2][6]=sid_rock2c
+ b.grid[2][7]=sid_rock2d
 end
 
 -- returns the number of matches
@@ -130,11 +147,32 @@ function settle_grid()
     -- they should only fall if
     -- both halves are above
     -- empty cells.
-    if b.grid[y][x]~=sid_empty
-       and b.yoffs[y][x]==0 then
+    local g=b.grid[y][x]
+    if g==sid_rock2a and
+       b.yoffs[y][x]==0 then
+     if y+1<b.h and
+        b.grid[y+2][x]==sid_empty and
+        b.grid[y+2][x+1]==sid_empty then
+      b.grid[y+1][x]=sid_rock2a
+      b.grid[y+1][x+1]=sid_rock2b
+      b.grid[y+2][x]=sid_rock2c
+      b.grid[y+2][x+1]=sid_rock2d
+      b.grid[y][x]=sid_empty
+      b.grid[y][x+1]=sid_empty
+      b.yoffs[y+1][x]=7
+      b.yoffs[y+1][x+1]=7
+      b.yoffs[y+2][x]=7
+      b.yoffs[y+2][x+1]=7
+      scount+=1
+     end
+    elseif g~=sid_empty and
+           g~=sid_rock2b and
+           g~=sid_rock2c and
+           g~=sid_rock2d and
+           b.yoffs[y][x]==0 then
      if y<b.h and
         b.grid[y+1][x]==sid_empty then
-      b.grid[y+1][x]=b.grid[y][x]
+      b.grid[y+1][x]=g
       b.grid[y][x]=sid_empty
       b.yoffs[y+1][x]=7
       scount+=1
@@ -190,6 +228,13 @@ function _update60()
    sfx(s_cancel,0)
   end
  end
+ -- look up rock under cursor
+ -- (default to rock1)
+ local sg=b.grid[b.cy][b.cx]
+ local isrock=fget(sg,sf_rock)
+ local r=b.rock_mdists[
+         isrock and sg
+                 or sid_rock1]
  -- move cursor
  local dx,dy=0,0
  if btnp(⬆️) then dy-=1 end
@@ -197,27 +242,64 @@ function _update60()
  if btnp(⬅️) then dx-=1 end
  if btnp(➡️) then dx+=1 end
  if (dx~=0) dy=0 -- no diagonals!
- local cx2=b:clampx(b.cx+dx)
- local cy2=b:clampy(b.cy+dy)
+ local mi=2*dx+dy+3
+ local mdist=mi~=0 and r[mi]
+ local cx2=b:clampx(b.cx+dx*mdist)
+ local cy2=b:clampy(b.cy+dy*mdist)
  if cx2~=b.cx or cy2~=b.cy then
-  local click=true
+  local move_snd=s_click
   -- swap gems before moving cursor
   if b.selecting then
    b.selecting=false
-   click=false
-   local sg=b.grid[b.cy][b.cx]
-   b.grid[b.cy][b.cx]=b.grid[cy2][cx2]
-   b.grid[cy2][cx2]=sg
-   -- revert if not a match
-   if clear_matches()==0 then
-    b.grid[cy2][cx2]=b.grid[b.cy][b.cx]
-    b.grid[b.cy][b.cx]=sg
-    sfx(s_cancel,0)
-   end
+   if sg==sid_rock1 then
+    -- only swap if dest cell is empty
+    if b.grid[cy2][cx2]==sid_empty then
+     b.grid[b.cy][b.cx]=sid_empty
+     b.grid[cy2][cx2]=sg
+     b.settling=true
+    else
+     move_snd=s_cancel
+    end
+   elseif isrock then -- 2x2 rock
+    -- get upper-left block coords
+    local bx,by=b.cx+r[6],b.cy+r[7]
+    -- get coords for cells to check for empty
+    local ex,ey=bx+dx+(dx>0 and 1 or 0),
+                by+dy+(dy>0 and 1 or 0)
+    local ex2,ey2=ex+abs(dy),
+                  ey+abs(dx)
+    -- only swap if both dest cells are empty
+    if b.grid[ey][ex]==sid_empty and
+       b.grid[ey2][ex2]==sid_empty then
+     b.grid[by][bx]=sid_empty
+     b.grid[by][bx+1]=sid_empty
+     b.grid[by+1][bx]=sid_empty
+     b.grid[by+1][bx+1]=sid_empty
+     bx+=dx
+     by+=dy
+     b.grid[by][bx]=sid_rock2a
+     b.grid[by][bx+1]=sid_rock2b
+     b.grid[by+1][bx]=sid_rock2c
+     b.grid[by+1][bx+1]=sid_rock2d
+     cx2,cy2=b.cx+dx,b.cy+dy -- only move one tile
+     b.settling=true
+    else
+     move_snd=s_cancel
+    end
+   else
+	   b.grid[b.cy][b.cx]=b.grid[cy2][cx2]
+	   b.grid[cy2][cx2]=sg
+	   move_snd=nil
+	   -- revert if not a match
+	   if clear_matches()==0 then
+	    b.grid[cy2][cx2]=b.grid[b.cy][b.cx]
+	    b.grid[b.cy][b.cx]=sg
+	    move_snd=s_cancel
+	   end
+	  end
   end
-  b.cx=cx2
-  b.cy=cy2
-  if click then sfx(s_click,0) end
+  b.cx,b.cy=cx2,cy2
+  if (move_snd) sfx(move_snd,0)
  end
 end
 
@@ -240,9 +322,14 @@ function _draw()
   by+=8
  end
  -- draw cursor
- local cx,cy=b.bx+8*b.cx-8,
-             b.by+8*b.cy-8
- rect(cx,cy,cx+7,cy+7,
+ local sg=b.grid[b.cy][b.cx]
+ local isrock=fget(sg,sf_rock)
+ local r=b.rock_mdists[
+         isrock and sg
+                 or sid_rock1]
+ local cx,cy=b.bx+8*(b.cx+r[6])-8,
+             b.by+8*(b.cy+r[7])-8
+ rect(cx,cy, cx+r[8],cy+r[8],
       b:cursor_fill())
  -- draw diggin' dude
  t=t+1
@@ -268,8 +355,13 @@ s_dope1=3
 -- sprite ids
 sid_empty=16
 sid_gems={5,21,37,53}
+sid_rock1=25
+sid_rock2a=7
+sid_rock2b=8
+sid_rock2c=23
+sid_rock2d=24
 -- sprite flags
-sf_rock=1
+sf_rock=0
 -->8
 -- debug
 function vardump(value,depth,key)
