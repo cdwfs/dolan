@@ -16,8 +16,6 @@ function init_board()
   crs_t=0,
   cx=1,
   cy=1,
-  gem_sids={5,21,37,53},
-  empty_sid=16,
   grid={},
   yoffs={},
   pgems={},
@@ -44,7 +42,7 @@ function init_board()
   local row={}
   local yoffs={}
   for x=1,b.w do
-   add(row,rnd(b.gem_sids))
+   add(row,rnd(sid_gems))
    add(yoffs,0)
   end
   add(b.grid,row)
@@ -56,8 +54,8 @@ function init_board()
   for y=1,b.h do
    for x=1,b.w do
     b.yoffs[y][x]=0
-    if b.grid[y][x]==b.empty_sid then
-     b.grid[y][x]=rnd(b.gem_sids)
+    if b.grid[y][x]==sid_empty then
+     b.grid[y][x]=rnd(sid_gems)
     end
    end
   end
@@ -71,7 +69,7 @@ function clear_matches(skip_fx)
   local row=b.grid[y]
   for x=1,b.w do
    local s=row[x]
-   if s==b.empty_sid then goto match_end end
+   if s==sid_empty then goto match_end end
    local n=1 -- find x match
    for mx=x+1,b.w do
     if (row[mx]~=s) break
@@ -110,7 +108,7 @@ function clear_matches(skip_fx)
        vy=-10+rnd(4),
       })
      end
-     b.grid[y][x]=b.empty_sid
+     b.grid[y][x]=sid_empty
      b.yoffs[y][x]=0
     end
    end
@@ -126,12 +124,12 @@ function settle_grid()
   local scount=0
   for y=1,b.h do
    for x=1,b.w do
-    if b.grid[y][x]~=b.empty_sid
+    if b.grid[y][x]~=sid_empty
        and b.yoffs[y][x]==0 then
      if y<b.h and
-        b.grid[y+1][x]==b.empty_sid then
+        b.grid[y+1][x]==sid_empty then
       b.grid[y+1][x]=b.grid[y][x]
-      b.grid[y][x]=b.empty_sid
+      b.grid[y][x]=sid_empty
       b.yoffs[y+1][x]=7
       scount+=1
      end
@@ -176,7 +174,7 @@ function _update60()
  if btnp(🅾️) then
   if not b.selecting
     and not b.settling
-    and b.grid[b.cy][b.cx]~=b.empty_sid then
+    and b.grid[b.cy][b.cx]~=sid_empty then
    sfx(s_select,0)
    b.selecting=true
   elseif b.selecting then
@@ -257,6 +255,9 @@ s_click=0
 s_select=1
 s_cancel=2
 s_dope1=3
+-- sprite ids
+sid_empty=16
+sid_gems={5,21,37,53}
 -- sprite flags
 sf_rock=1
 -->8
