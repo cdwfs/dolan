@@ -196,6 +196,7 @@ function _update60()
  if btnp(⬇️) then dy+=1 end
  if btnp(⬅️) then dx-=1 end
  if btnp(➡️) then dx+=1 end
+ if (dx~=0) dy=0 -- no diagonals!
  local cx2=b:clampx(b.cx+dx)
  local cy2=b:clampy(b.cy+dy)
  if cx2~=b.cx or cy2~=b.cy then
