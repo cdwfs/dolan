@@ -124,6 +124,12 @@ function settle_grid()
   local scount=0
   for y=1,b.h do
    for x=1,b.w do
+    -- if not empty and not moving,
+    -- see if we should fall.
+    -- todo: handle 2x2 rocks.
+    -- they should only fall if
+    -- both halves are above
+    -- empty cells.
     if b.grid[y][x]~=sid_empty
        and b.yoffs[y][x]==0 then
      if y<b.h and
@@ -133,6 +139,8 @@ function settle_grid()
       b.yoffs[y+1][x]=7
       scount+=1
      end
+    -- if already falling, keep
+    -- falling.
     elseif b.yoffs[y][x]>0 then
      b.yoffs[y][x]-=1
      scount+=1
@@ -170,7 +178,7 @@ end
 function _update60()
  settle_grid()
  update_pgems()
- -- update cursor
+ -- select or cancel selection
  if btnp(🅾️) then
   if not b.selecting
     and not b.settling
@@ -182,6 +190,7 @@ function _update60()
    sfx(s_cancel,0)
   end
  end
+ -- move cursor
  local dx,dy=0,0
  if btnp(⬆️) then dy-=1 end
  if btnp(⬇️) then dy+=1 end
