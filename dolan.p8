@@ -2,82 +2,21 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 -- dolan's cadillac
---    picostevemo 
-b={}
-function init_board()
- b={
-  w=10,
-  h=7,
-  bx=24,
-  by=72,
-  crs_fills={
-   0x1107.26e1,0x1107.4678,
-   0x1107.8764,0x1107.1e62},
-  crs_t=0,
-  cx=1,
-  cy=1,
-  -- use mi=2*dx+dy+3 to index
-  --   l=1  u=2  z=3  d=4  r=5
-  -- 6 and 7 are tile offsets to
-  -- rock nw corner.
-  -- 8 is cursor size in pixels
-  rock_mdists={
-   [sid_rock1]={1,1,0,1,1,0,0,7},
-   [sid_rock2a]={1,1,0,2,2,0,0,15},
-   [sid_rock2b]={2,1,0,2,1,-1,0,15},
-   [sid_rock2c]={1,2,0,1,2,0,-1,15},
-   [sid_rock2d]={2,2,0,1,1,-1,-1,15},
-  },
-  grid={},
-  yoffs={},
-  pgems={},
-  selecting=false,
-  settling=false,
-  clampx=function(this,x)
-   return max(1,min(this.w,x))
-  end,
-  clampy=function(this,y)
-   return max(1,min(this.h,y))
-  end,
-  cursor_fill=function(this)
-   if this.selecting then
-    this.crs_t=1+this.crs_t%4
-    return this.crs_fills[this.crs_t]
-   else
-    this.crs_t=0
-    return this.crs_fills[1]
-   end
-  end,
- }
- -- populate grid
- for y=1,b.h do
-  local row,yoffs={},{}
-  for x=1,b.w do
-   add(row,rnd(sid_gems))
-   add(yoffs,0)
-  end
-  add(b.grid,row)
-  add(b.yoffs,yoffs)
- end
- -- iterate until no matches
- while clear_matches(true)>0 do
-  b.settling=false
-  for y=1,b.h do
-   for x=1,b.w do
-    b.yoffs[y][x]=0
-    if b.grid[y][x]==sid_empty then
-     b.grid[y][x]=rnd(sid_gems)
-    end
-   end
-  end
- end
- -- todo: place rocks
- b.grid[1][3]=sid_rock1
- b.grid[1][6]=sid_rock2a
- b.grid[1][7]=sid_rock2b
- b.grid[2][6]=sid_rock2c
- b.grid[2][7]=sid_rock2d
+--    picostevemo
+
+function menu_enter()
+ cls(0)
 end
+
+function menu_update()
+end
+
+function menu_draw()
+ 
+end
+-->8
+-- match3 mode
+b={}
 
 -- returns the number of matches
 function clear_matches(skip_fx)
@@ -206,14 +145,84 @@ function update_pgems()
  b.pgems=outg
 end
 
-function _init()
- poke(0x5f34,1) -- color.fill mode
- palt(0x0040) -- orange transparent by default
- cls(0)
- init_board()
+function match3_enter()
+ b={
+  w=10,
+  h=7,
+  bx=24,
+  by=72,
+  crs_fills={
+   0x1107.26e1,0x1107.4678,
+   0x1107.8764,0x1107.1e62},
+  crs_t=0,
+  cx=1,
+  cy=1,
+  -- use mi=2*dx+dy+3 to index
+  --   l=1  u=2  z=3  d=4  r=5
+  -- 6 and 7 are tile offsets to
+  -- rock nw corner.
+  -- 8 is cursor size in pixels
+  rock_mdists={
+   [sid_rock1]={1,1,0,1,1,0,0,7},
+   [sid_rock2a]={1,1,0,2,2,0,0,15},
+   [sid_rock2b]={2,1,0,2,1,-1,0,15},
+   [sid_rock2c]={1,2,0,1,2,0,-1,15},
+   [sid_rock2d]={2,2,0,1,1,-1,-1,15},
+  },
+  grid={},
+  yoffs={},
+  pgems={},
+  selecting=false,
+  settling=false,
+  digger_t=0,
+  digger_f={1,33,3,35},
+  clampx=function(this,x)
+   return max(1,min(this.w,x))
+  end,
+  clampy=function(this,y)
+   return max(1,min(this.h,y))
+  end,
+  cursor_fill=function(this)
+   if this.selecting then
+    this.crs_t=1+this.crs_t%4
+    return this.crs_fills[this.crs_t]
+   else
+    this.crs_t=0
+    return this.crs_fills[1]
+   end
+  end,
+ }
+ -- populate grid
+ for y=1,b.h do
+  local row,yoffs={},{}
+  for x=1,b.w do
+   add(row,rnd(sid_gems))
+   add(yoffs,0)
+  end
+  add(b.grid,row)
+  add(b.yoffs,yoffs)
+ end
+ -- iterate until no matches
+ while clear_matches(true)>0 do
+  b.settling=false
+  for y=1,b.h do
+   for x=1,b.w do
+    b.yoffs[y][x]=0
+    if b.grid[y][x]==sid_empty then
+     b.grid[y][x]=rnd(sid_gems)
+    end
+   end
+  end
+ end
+ -- todo: place rocks
+ b.grid[1][3]=sid_rock1
+ b.grid[1][6]=sid_rock2a
+ b.grid[1][7]=sid_rock2b
+ b.grid[2][6]=sid_rock2c
+ b.grid[2][7]=sid_rock2d
 end
 
-function _update60()
+function match3_update()
  settle_grid()
  update_pgems()
  -- select or cancel selection
@@ -303,9 +312,7 @@ function _update60()
  end
 end
 
-t=0
-f={1,33,3,35}
-function _draw()
+function match3_draw()
  -- draw bg
  palt(0)
  map(0,0)
@@ -332,8 +339,9 @@ function _draw()
  rect(cx,cy, cx+r[8],cy+r[8],
       b:cursor_fill())
  -- draw diggin' dude
- t=t+1
- spr(f[1+((t\4)%4)],8+8*b.cx,56,2,2)
+ b.digger_t+=1
+ spr(b.digger_f[1+((b.digger_t\4)%4)],
+     8+8*b.cx,56,2,2)
  -- draw particle gems
  for g in all(b.pgems) do
   spr(g.s,g.px,g.py)
@@ -343,6 +351,7 @@ function _draw()
 end
 -->8
 -- globals
+
 function clamp(x,low,hi)
  return max(low,min(hi,x))
 end
@@ -362,6 +371,31 @@ sid_rock2c=23
 sid_rock2d=24
 -- sprite flags
 sf_rock=0
+
+-- game modes
+modes={
+ match3={
+  enter=match3_enter,
+  update=match3_update,
+  draw=match3_draw,
+ },
+}
+game_mode=modes.match3
+
+function _init()
+ poke(0x5f34,1) -- color.fill mode
+ palt(0x0040) -- orange transparent by default
+ cls(0)
+ game_mode.enter()
+end
+
+function _update60()
+ game_mode.update()
+end
+
+function _draw()
+ game_mode.draw()
+end
 -->8
 -- debug
 function vardump(value,depth,key)
