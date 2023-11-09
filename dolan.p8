@@ -28,7 +28,7 @@ function menu_update()
  mm.wheel_t=1+mm.wheel_t%2
  mm.car_t+=0.001
  if btnp(🅾️) then
-  game_mode=modes.match3
+  next_mode=modes.match3
  end
 end
 
@@ -469,6 +469,7 @@ modes={
  },
 }
 game_mode=modes.menu
+next_mode=game_mode
 
 function _init()
  poke(0x5f34,1) -- color.fill mode
@@ -478,22 +479,15 @@ function _init()
 end
 
 function _update60()
- local last_mode=game_mode
  game_mode.update()
- -- todo mode switching is flaky
- -- need to make sure btnp is
- -- reset in the new mode.
- -- really it's a reset to change
- -- modes for the next frame.
- if last_mode~=game_mode then
-  game_mode.enter()
-  game_mode.update()
- end
 end
 
 function _draw()
  game_mode.draw()
-  
+ if next_mode~=game_mode then
+  game_mode=next_mode
+  game_mode.enter()
+ end
 end
 -->8
 -- debug
