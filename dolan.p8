@@ -17,7 +17,7 @@ function menu_enter()
 end
 
 function menu_update()
- bg_update()
+ bg_update(1)
  mm.wheel_t=1+mm.wheel_t%2
  mm.car_t+=0.001
  if btnp(🅾️) then
@@ -45,6 +45,83 @@ end
 -->8
 -- match3 mode
 b={}
+
+function match3_enter()
+ b={
+  w=10,
+  h=7,
+  bx=24,
+  by=72,
+  crs_fills={
+   0x1107.26e1,0x1107.4678,
+   0x1107.8764,0x1107.1e62},
+  crs_t=0,
+  cx=1,
+  cy=1,
+  -- use mi=2*dx+dy+3 to index
+  --   l=1  u=2  z=3  d=4  r=5
+  -- 6 and 7 are tile offsets to
+  -- rock nw corner.
+  -- 8 is cursor size in pixels
+  rock_mdists={
+   [sid_rock1]={1,1,0,1,1,0,0,7},
+   [sid_rock2a]={1,1,0,2,2,0,0,15},
+   [sid_rock2b]={2,1,0,2,1,-1,0,15},
+   [sid_rock2c]={1,2,0,1,2,0,-1,15},
+   [sid_rock2d]={2,2,0,1,1,-1,-1,15},
+  },
+  grid={},
+  yoffs={},
+  pgems={},
+  selecting=false,
+  settling=false,
+  digger_t=0,
+  digger_f={1,33,3,35,11,43,13,45},
+  clampx=function(this,x)
+   return max(1,min(this.w,x))
+  end,
+  clampy=function(this,y)
+   return max(1,min(this.h,y))
+  end,
+  cursor_fill=function(this)
+   if this.selecting then
+    this.crs_t=1+this.crs_t%4
+    return this.crs_fills[this.crs_t]
+   else
+    this.crs_t=0
+    return this.crs_fills[1]
+   end
+  end,
+ }
+ -- populate grid
+ for y=1,b.h do
+  local row,yoffs={},{}
+  for x=1,b.w do
+   add(row,rnd(sid_gems))
+   add(yoffs,0)
+  end
+  add(b.grid,row)
+  add(b.yoffs,yoffs)
+ end
+ -- iterate until no matches
+ while clear_matches(true)>0 do
+  b.settling=false
+  for y=1,b.h do
+   for x=1,b.w do
+    b.yoffs[y][x]=0
+    if b.grid[y][x]==sid_empty then
+     b.grid[y][x]=rnd(sid_gems)
+    end
+   end
+  end
+ end
+ -- todo: place rocks
+ b.grid[1][3]=sid_rock1
+ b.grid[1][6]=sid_rock2a
+ b.grid[1][7]=sid_rock2b
+ b.grid[2][6]=sid_rock2c
+ b.grid[2][7]=sid_rock2d
+end
 
 -- returns the number of matches
 function clear_matches(skip_fx)
@@ -173,84 +250,8 @@ function update_pgems()
  b.pgems=outg
 end
 
-function match3_enter()
- b={
-  w=10,
-  h=7,
-  bx=24,
-  by=72,
-  crs_fills={
-   0x1107.26e1,0x1107.4678,
-   0x1107.8764,0x1107.1e62},
-  crs_t=0,
-  cx=1,
-  cy=1,
-  -- use mi=2*dx+dy+3 to index
-  --   l=1  u=2  z=3  d=4  r=5
-  -- 6 and 7 are tile offsets to
-  -- rock nw corner.
-  -- 8 is cursor size in pixels
-  rock_mdists={
-   [sid_rock1]={1,1,0,1,1,0,0,7},
-   [sid_rock2a]={1,1,0,2,2,0,0,15},
-   [sid_rock2b]={2,1,0,2,1,-1,0,15},
-   [sid_rock2c]={1,2,0,1,2,0,-1,15},
-   [sid_rock2d]={2,2,0,1,1,-1,-1,15},
-  },
-  grid={},
-  yoffs={},
-  pgems={},
-  selecting=false,
-  settling=false,
-  digger_t=0,
-  digger_f={1,33,3,35,11,43,13,45},
-  clampx=function(this,x)
-   return max(1,min(this.w,x))
-  end,
-  clampy=function(this,y)
-   return max(1,min(this.h,y))
-  end,
-  cursor_fill=function(this)
-   if this.selecting then
-    this.crs_t=1+this.crs_t%4
-    return this.crs_fills[this.crs_t]
-   else
-    this.crs_t=0
-    return this.crs_fills[1]
-   end
-  end,
- }
- -- populate grid
- for y=1,b.h do
-  local row,yoffs={},{}
-  for x=1,b.w do
-   add(row,rnd(sid_gems))
-   add(yoffs,0)
-  end
-  add(b.grid,row)
-  add(b.yoffs,yoffs)
- end
- -- iterate until no matches
- while clear_matches(true)>0 do
-  b.settling=false
-  for y=1,b.h do
-   for x=1,b.w do
-    b.yoffs[y][x]=0
-    if b.grid[y][x]==sid_empty then
-     b.grid[y][x]=rnd(sid_gems)
-    end
-   end
-  end
- end
- -- todo: place rocks
- b.grid[1][3]=sid_rock1
- b.grid[1][6]=sid_rock2a
- b.grid[1][7]=sid_rock2b
- b.grid[2][6]=sid_rock2c
- b.grid[2][7]=sid_rock2d
-end
-
 function match3_update()
+ bg_update()
  settle_grid()
  update_pgems()
  -- select or cancel selection
@@ -342,9 +343,8 @@ end
 
 function match3_draw()
  -- draw bg
- palt(0)
- map(0,0)
- palt(0x0040)
+ bg_draw()
+ map(2,9,b.bx-8,b.by,12,7)
  -- draw board
  local by=b.by
  for y=1,b.h do
@@ -432,6 +432,7 @@ function _update60()
 end
 
 function _draw()
+ fillp()
  game_mode.draw()
  if next_mode~=game_mode then
   game_mode=next_mode
@@ -496,27 +497,28 @@ function bg_init()
  end
 end
 
-function bg_update()
+function bg_update(dx)
+ dx=dx or 0
  -- update clouds
  if rnd(10)<0.04 then
   add_cloud()
  end
  local c2={}
  for c in all(bg.clouds) do
-  c.x+=c.vx
+  c.x+=c.vx+0.05*dx
   c.y+=c.vy
   if (c.x<128) add(c2,c)
  end
  bg.clouds=c2
  -- update cacti
- bg.cactx1+=0.5
+ bg.cactx1+=0.5*dx
  if (bg.cactx1>=128) bg.cactx1-=256
- bg.cactx2+=0.5
+ bg.cactx2+=0.5*dx
  if (bg.cactx2>=128) bg.cactx2-=256
  -- update road
- bg.roadx1+=1
+ bg.roadx1+=1*dx
  if (bg.roadx1>=128) bg.roadx1-=256
- bg.roadx2+=1
+ bg.roadx2+=1*dx
  if (bg.roadx2>=128) bg.roadx2-=256
 end
 
@@ -546,7 +548,7 @@ function add_cloud(x)
    y=by+rnd(3),
    w=10+rnd(5),
    h=2+rnd(4),
-   vx=0.1,
+   vx=0.03,
    vy=rnd(0.001)-0.0005,
    --fp=i<2 and 0 or rnd(0xffff)\1+0.5,
    col=i<2 and 6 or 7,
