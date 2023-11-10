@@ -9,6 +9,9 @@ mm={}
 function menu_enter()
  cls(0)
  mm={
+  scrollx=1,
+  titlex=32,
+  titley=12,
   carx=32,
   cary=51,
   car_t=0,
@@ -17,11 +20,17 @@ function menu_enter()
 end
 
 function menu_update()
- bg_update(1)
+ mm.carx+=mm.scrollx-1
+ mm.titlex+=mm.scrollx-1
+ if mm.carx>128 then
+  next_mode="match3"
+ end
+ bg_update(mm.scrollx)
  mm.wheel_t=1+mm.wheel_t%2
  mm.car_t+=0.001
  if btnp(🅾️) then
-  next_mode=modes.match3
+  sfx(s_dope1,0)
+  mm.scrollx=2
  end
 end
 
@@ -37,10 +46,24 @@ function menu_draw()
  spr(sid_wheels[mm.wheel_t],
      mm.carx+40+cardx,mm.cary+16)
  -- title
- ?"\^w\^t\f1\^j93dolan's\^j96\+cfcadillac\^j93\+ff\f9dolan's\^j96\+becadillac"
+ --?"\^w\^t\f1\^j93dolan's\^j96\+cfcadillac\^j93\+ff\f9dolan's\^j96\+becadillac"
+ print("\^w\^tdolan's",
+       mm.titlex+1+4,
+       mm.titley+1,1)
+ print("\^w\^tdolan's",
+       mm.titlex+4,
+       mm.titley,9)
+ print("\^w\^tcadillac",
+       mm.titlex+1,
+       mm.titley+12+1,1)
+ print("\^w\^tcadillac",
+       mm.titlex,
+       mm.titley+12,9)
  -- menu
- print("press 🅾️ to start",30,96,0)
- print("press 🅾️ to start",29,95,7)
+ if mm.scrollx<2 then
+  print("press 🅾️ to start",30,96,0)
+  print("press 🅾️ to start",29,95,7)
+ end
 end
 -->8
 -- match3 mode
@@ -50,8 +73,10 @@ function match3_enter()
  b={
   w=10,
   h=7,
-  bx=24,
+  bx=-100,
   by=72,
+  scrollx=2,
+  interactive=false,
   crs_fills={
    0x1107.26e1,0x1107.4678,
    0x1107.8764,0x1107.1e62},
@@ -251,7 +276,16 @@ function update_pgems()
 end
 
 function match3_update()
- bg_update()
+ if b.bx<24 then
+  if (btn(⬅️)) scrollx+=1
+  if (btn(➡️)) scrollx-=1
+  b.bx=min(24,b.bx+b.scrollx)
+ else
+  b.interactive=true
+  b.scrollx=0
+ end
+ bg_update(b.scrollx)
+ if (not b.interactive) return
  settle_grid()
  update_pgems()
  -- select or cancel selection
@@ -357,19 +391,21 @@ function match3_draw()
   by+=8
  end
  -- draw cursor
- local sg=b.grid[b.cy][b.cx]
- local isrock=fget(sg,sf_rock)
- local r=b.rock_mdists[
-         isrock and sg
-                 or sid_rock1]
- local cx,cy=b.bx+8*(b.cx+r[6])-8,
-             b.by+8*(b.cy+r[7])-8
- rect(cx,cy, cx+r[8],cy+r[8],
-      b:cursor_fill())
+ if b.interactive then
+  local sg=b.grid[b.cy][b.cx]
+  local isrock=fget(sg,sf_rock)
+  local r=b.rock_mdists[
+          isrock and sg
+                  or sid_rock1]
+  local cx,cy=b.bx+8*(b.cx+r[6])-8,
+              b.by+8*(b.cy+r[7])-8
+  rect(cx,cy, cx+r[8],cy+r[8],
+       b:cursor_fill())
+ end
  -- draw diggin' dude
  b.digger_t+=1
  spr(b.digger_f[1+((b.digger_t\4)%8)],
-     8+8*b.cx,56,2,2)
+     b.bx-16+8*b.cx,56,2,2)
  -- draw particle gems
  for g in all(b.pgems) do
   spr(g.s,g.px,g.py)
@@ -416,7 +452,7 @@ modes={
   draw=match3_draw,
  },
 }
-game_mode=modes.menu
+game_mode="menu"
 next_mode=game_mode
 
 function _init()
@@ -424,19 +460,20 @@ function _init()
  palt(0x0040) -- orange transparent by default
  cls(0)
  bg_init()
- game_mode.enter()
+ modes[game_mode].enter()
 end
 
 function _update60()
- game_mode.update()
+ modes[game_mode].update()
 end
 
 function _draw()
  fillp()
- game_mode.draw()
+ modes[game_mode].draw()
+ --print(game_mode,1,1,0)
  if next_mode~=game_mode then
   game_mode=next_mode
-  game_mode.enter()
+  modes[game_mode].enter()
  end
 end
 -->8
@@ -492,24 +529,18 @@ function bg_init()
   cactx2=-128,
   clouds={},
  }
- for i=1,8 do
-  add_cloud(16*i)
+ for i=1,16 do
+  add_cloud(16*i-128)
  end
 end
 
 function bg_update(dx)
  dx=dx or 0
  -- update clouds
- if rnd(10)<0.04 then
-  add_cloud()
- end
- local c2={}
  for c in all(bg.clouds) do
   c.x+=c.vx+0.05*dx
-  c.y+=c.vy
-  if (c.x<128) add(c2,c)
+  if (c.x>=128) c.x-=256
  end
- bg.clouds=c2
  -- update cacti
  bg.cactx1+=0.5*dx
  if (bg.cactx1>=128) bg.cactx1-=256
@@ -540,16 +571,15 @@ function bg_draw()
 end
 
 function add_cloud(x)
- local bx,by=(x or -20)+rnd(5),
-             rnd(48)
+ local bx,by=x+rnd(5)\1,rnd(48)\1
+ local vx=0.03+rnd(0.002)
  for i=1,2+rnd(4)\1 do
   add(bg.clouds,{
-   x=bx+rnd(3),
-   y=by+rnd(3),
+   x=bx+rnd(3)\1,
+   y=by+rnd(3)\1,
    w=10+rnd(5),
    h=2+rnd(4),
    vx=0.03,
-   vy=rnd(0.001)-0.0005,
    --fp=i<2 and 0 or rnd(0xffff)\1+0.5,
    col=i<2 and 6 or 7,
   })
