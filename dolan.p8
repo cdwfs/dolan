@@ -28,7 +28,7 @@ function menu_update()
  bg_update(mm.scrollx)
  mm.wheel_t=1+mm.wheel_t%2
  mm.car_t+=0.001
- if btnp(🅾️) then
+ if btnp(🅾️) and mm.scrollx<2 then
   sfx(s_dope1,0)
   mm.scrollx=2
  end
