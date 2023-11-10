@@ -368,7 +368,7 @@ function match3_draw()
       b:cursor_fill())
  -- draw diggin' dude
  b.digger_t+=1
- spr(b.digger_f[1+((b.digger_t\8)%4)],
+ spr(b.digger_f[1+((b.digger_t\4)%8)],
      8+8*b.cx,56,2,2)
  -- draw particle gems
  for g in all(b.pgems) do
