@@ -9,22 +9,15 @@ mm={}
 function menu_enter()
  cls(0)
  mm={
-  roadx1=0,
-  roadx2=-128,
-  cactx1=0,
-  cactx2=-128,
   carx=32,
   cary=51,
   car_t=0,
   wheel_t=0,
-  clouds={},
  }
- for i=1,8 do
-  add_cloud(16*i)
- end
 end
 
 function menu_update()
+ bg_update()
  mm.wheel_t=1+mm.wheel_t%2
  mm.car_t+=0.001
  if btnp(🅾️) then
@@ -32,52 +25,9 @@ function menu_update()
  end
 end
 
-function add_cloud(x)
- local bx,by=(x or -20)+rnd(5),
-             rnd(48)
- for i=1,2+rnd(4)\1 do
-  add(mm.clouds,{
-   x=bx+rnd(3),
-   y=by+rnd(3),
-   w=10+rnd(5),
-   h=2+rnd(4),
-   vx=0.1,
-   vy=rnd(0.001)-0.0005,
-   --fp=i<2 and 0 or rnd(0xffff)\1+0.5,
-   col=i<2 and 6 or 7,
-  })
- end
-end
-
 function menu_draw()
- -- sky
- rectfill(0,0,127,64,12)
- -- update and draw clouds
- if rnd(10)<0.04 then
-  add_cloud()
- end
- local c2={}
- for c in all(mm.clouds) do
-  c.x+=c.vx
-  c.y+=c.vy
-  ovalfill(c.x,c.y,c.x+c.w,c.y+c.h,c.col)
-  if (c.x<128) add(c2,c)
- end
- mm.clouds=c2
- -- cacti
- map(16,7,mm.cactx1,56,16,2)
- map(16,7,mm.cactx2,56,16,2)
- mm.cactx1+=0.5
- if (mm.cactx1>=128) mm.cactx1-=256
- mm.cactx2+=0.5
- if (mm.cactx2>=128) mm.cactx2-=256
- -- road
- map(16,9,mm.roadx1,72,16,1)
- map(16,9,mm.roadx2,72,16,1)
- mm.roadx1+=1
- if (mm.roadx1>=128) mm.roadx1-=256
- mm.roadx2+=1
- if (mm.roadx2>=128) mm.roadx2-=256
+ -- background
+ bg_draw()
  -- car
  local cardx=2*sin(mm.car_t)
  spr(sid_car,mm.carx+cardx,
@@ -86,8 +36,6 @@ function menu_draw()
      mm.carx+8+cardx,mm.cary+16)
  spr(sid_wheels[mm.wheel_t],
      mm.carx+40+cardx,mm.cary+16)
- -- dirt
- rectfill(0,75,127,127,5)
  -- title
  ?"\^w\^t\f1\^j93dolan's\^j96\+cfcadillac\^j93\+ff\f9dolan's\^j96\+becadillac"
  -- menu
@@ -475,6 +423,7 @@ function _init()
  poke(0x5f34,1) -- color.fill mode
  palt(0x0040) -- orange transparent by default
  cls(0)
+ bg_init()
  game_mode.enter()
 end
 
@@ -528,6 +477,80 @@ function vardump(value,depth,key)
   printh(spaces..line_prefix..
          "("..t..") "..
          tostr(value))
+ end
+end
+-->8
+-- background
+bg={}
+
+function bg_init()
+ bg={
+  roadx1=0,
+  roadx2=-128,
+  cactx1=0,
+  cactx2=-128,
+  clouds={},
+ }
+ for i=1,8 do
+  add_cloud(16*i)
+ end
+end
+
+function bg_update()
+ -- update clouds
+ if rnd(10)<0.04 then
+  add_cloud()
+ end
+ local c2={}
+ for c in all(bg.clouds) do
+  c.x+=c.vx
+  c.y+=c.vy
+  if (c.x<128) add(c2,c)
+ end
+ bg.clouds=c2
+ -- update cacti
+ bg.cactx1+=0.5
+ if (bg.cactx1>=128) bg.cactx1-=256
+ bg.cactx2+=0.5
+ if (bg.cactx2>=128) bg.cactx2-=256
+ -- update road
+ bg.roadx1+=1
+ if (bg.roadx1>=128) bg.roadx1-=256
+ bg.roadx2+=1
+ if (bg.roadx2>=128) bg.roadx2-=256
+end
+
+function bg_draw()
+ -- sky
+ rectfill(0,0,127,64,12)
+ -- clouds
+ for c in all(bg.clouds) do
+  ovalfill(c.x,c.y,c.x+c.w,c.y+c.h,c.col)
+ end
+ -- cacti
+ map(16,7,bg.cactx1,56,16,2)
+ map(16,7,bg.cactx2,56,16,2)
+ -- road
+ map(16,9,bg.roadx1,72,16,1)
+ map(16,9,bg.roadx2,72,16,1)
+ -- dirt
+ rectfill(0,75,127,127,5)
+end
+
+function add_cloud(x)
+ local bx,by=(x or -20)+rnd(5),
+             rnd(48)
+ for i=1,2+rnd(4)\1 do
+  add(bg.clouds,{
+   x=bx+rnd(3),
+   y=by+rnd(3),
+   w=10+rnd(5),
+   h=2+rnd(4),
+   vx=0.1,
+   vy=rnd(0.001)-0.0005,
+   --fp=i<2 and 0 or rnd(0xffff)\1+0.5,
+   col=i<2 and 6 or 7,
+  })
  end
 end
 __gfx__
