@@ -358,6 +358,8 @@ function match3_update()
     else
      move_snd=s_cancel
     end
+   elseif fget(b.grid[cy2][cx2],sf_rock) then
+    move_snd=s_cancel
    else
 	   b.grid[b.cy][b.cx]=b.grid[cy2][cx2]
 	   b.grid[cy2][cx2]=sg
