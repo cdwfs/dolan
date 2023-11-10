@@ -26,7 +26,7 @@ function menu_update()
   next_mode="match3"
  end
  bg_update(mm.scrollx)
- mm.wheel_t=1+mm.wheel_t%2
+ mm.wheel_t=1+mm.wheel_t%5
  mm.car_t+=0.001
  if btnp(🅾️) and mm.scrollx<2 then
   sfx(s_dope1,0)
@@ -434,7 +434,7 @@ sid_rock2b=8
 sid_rock2c=23
 sid_rock2d=24
 sid_car=145
-sid_wheels={160,176}
+sid_wheels={160,160,176,176,176}
 sid_cloud1=65
 sid_cloud2=67
 sid_cloud3=68
