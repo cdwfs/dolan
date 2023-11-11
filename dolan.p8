@@ -384,8 +384,8 @@ end
 function match3_draw()
  -- draw bg
  bg_draw()
- map(2,9,b.bx-8,b.by,12,7)
  -- draw board
+ map(2,9,b.bx-8,b.by,12,7)
  local by=b.by
  for y=1,b.h do
   local bx=b.bx
@@ -481,6 +481,11 @@ function _init()
    update=match3_update,
    draw=match3_draw,
   },
+  carfall={
+   enter=cf_enter,
+   update=cf_update,
+   draw=cf_draw,
+  }
  }
  game_mode="menu"
  next_mode=game_mode
@@ -622,6 +627,39 @@ function add_cloud(x)
    --fp=i<2 and 0 or rnd(0xffff)\1+0.5,
    col=i<2 and 6 or 7,
   })
+ end
+end
+-->8
+-- car-falling
+cf={}
+
+function cf_enter(args)
+ cf={
+  bx=args.bx,
+  by=args.by,
+  w=args.w,
+  h=args.h,
+  grid=args.grid,
+ }
+end
+
+function cf_update()
+ bg_update()
+end
+
+function cf_draw()
+ -- draw bg
+ bg_draw()
+ -- draw board
+ map(2,9,cf.bx-8,cf.by,12,7)
+ local by=cf.by
+ for y=1,cf.h do
+  local bx=cf.bx
+  for x=1,cf.w do
+   spr(cf.grid[y][x],bx,by)
+   bx+=8
+  end
+  by+=8
  end
 end
 __gfx__
