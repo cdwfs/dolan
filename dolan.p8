@@ -458,6 +458,7 @@ game_mode="menu"
 next_mode=game_mode
 
 function _init()
+ --printh("****************")
  poke(0x5f34,1) -- color.fill mode
  palt(0x0040) -- orange transparent by default
  cls(0)
