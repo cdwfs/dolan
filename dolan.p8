@@ -24,7 +24,7 @@ function menu_update()
  mm.carx+=mm.scrollx-1
  mm.titlex+=mm.scrollx-1
  if mm.carx>128 then
-  next_mode="match3"
+  set_next_mode("match3")
  end
  bg_update(mm.scrollx)
  mm.wheel_t=1+mm.wheel_t%5
@@ -449,22 +449,42 @@ sid_cloud3=68
 sf_rock=0
 
 -- game modes
-modes={
- menu={
-  enter=menu_enter,
-  update=menu_update,
-  draw=menu_draw,
- },
- match3={
-  enter=match3_enter,
-  update=match3_update,
-  draw=match3_draw,
- },
-}
-game_mode="menu"
-next_mode=game_mode
+-- don't edit these directly;
+-- call set_next_mode() instead.
+modes={}
+game_mode=""
+next_mode=""
+next_mode_enter_args={}
+
+-- switch to a new game mode.
+-- args is passed to the new
+-- mode's enter() function.
+--
+-- the transition takes place
+-- on the frame following the
+-- one in which this function
+-- is called.
+function set_next_mode(mode,args)
+ next_mode=mode
+ next_mode_enter_args=args
+end
 
 function _init()
+ modes={
+  menu={
+   enter=menu_enter,
+   update=menu_update,
+   draw=menu_draw,
+  },
+  match3={
+   enter=match3_enter,
+   update=match3_update,
+   draw=match3_draw,
+  },
+ }
+ game_mode="menu"
+ next_mode=game_mode
+ next_mode_enter_args=nil
  --printh("****************")
  palt(0x0040) -- orange transparent by default
  cls(0)
@@ -481,7 +501,7 @@ function _draw()
  --print(game_mode,1,1,0)
  if next_mode~=game_mode then
   game_mode=next_mode
-  modes[game_mode].enter()
+  modes[game_mode].enter(next_mode_enter_args)
  end
 end
 -->8
