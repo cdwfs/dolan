@@ -398,6 +398,7 @@ function match3_draw()
  end
  -- draw cursor
  if b.interactive then
+  poke(0x5f34,1) -- color.fill mode
   local sg=b.grid[b.cy][b.cx]
   local isrock=fget(sg,sf_rock)
   local r=b.rock_mdists[
@@ -407,6 +408,8 @@ function match3_draw()
               b.by+8*(b.cy+r[7])-8
   rect(cx,cy, cx+r[8],cy+r[8],
        b:cursor_fill())
+  poke(0x5f34,0)
+  fillp()
  end
  -- draw diggin' dude
  b.digger_t+=1
@@ -463,7 +466,6 @@ next_mode=game_mode
 
 function _init()
  --printh("****************")
- poke(0x5f34,1) -- color.fill mode
  palt(0x0040) -- orange transparent by default
  cls(0)
  bg_init()
@@ -475,7 +477,6 @@ function _update60()
 end
 
 function _draw()
- fillp()
  modes[game_mode].draw()
  --print(game_mode,1,1,0)
  if next_mode~=game_mode then
