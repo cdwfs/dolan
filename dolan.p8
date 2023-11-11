@@ -520,6 +520,17 @@ function vardump(value,depth,key)
          tostr(value))
  end
 end
+
+-- print a range of memory to
+-- the console,one byte at a
+-- time.
+function pb(addr,n)
+ n = n or 1
+ for i=0,n-1 do
+  printh(tostr(addr+i,1)..": 0x"..
+         sub(tostr(peek(addr+i),1),5,6))
+ end
+end
 -->8
 -- background
 bg={}
