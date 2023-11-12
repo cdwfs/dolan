@@ -17,7 +17,7 @@ function menu_enter()
   car_t=0,
   wheel_t=0,
  }
- music(0,2000)
+ --music(0,2000)
 end
 
 function menu_update()
@@ -33,6 +33,9 @@ function menu_update()
   sfx(s_dope1,0)
   mm.scrollx=2
  end
+ -- tmp music experiment:
+ -- remove loop end from current
+ -- music pattern
  if btnp(❎) then
   poke(0x3101,0x42)
  end
@@ -280,6 +283,16 @@ function update_pgems()
 end
 
 function match3_update()
+ -- temp
+ if btnp(❎) then
+  set_next_mode("carfall",{
+   grid=b.grid,
+   w=b.w,
+   h=b.h,
+   bx=b.bx,
+   by=b.by,
+  })
+ end
  if b.bx<24 then
   if (btn(⬅️)) scrollx+=1
   if (btn(➡️)) scrollx-=1
@@ -640,11 +653,111 @@ function cf_enter(args)
   w=args.w,
   h=args.h,
   grid=args.grid,
+  collmasks={},
+  carx=128,
+  cary=50, -- slightly above road
+  carvx=-2,
+  carvy=0,
+  gravity=0.1,
+  wheel_t=0,
+  -- collision test points on
+  -- car, relative to carx/y
+  coll_pts={
+   { 0,17},
+   { 8,18},{ 9,21},{14,21},
+   {16,17},
+   {24,17},
+   {32,17},
+   {40,18},{41,21},{46,21},
+   {48,17},
+   {56,17},{60,17},
+  },
  }
+ -- construct 16x16 bitmask for
+ -- entire screen for collision
+ -- testing
+ for y=1,16 do
+  add(cf.collmasks,0x0000)
+ end
+ local tx0,ty0=1+cf.bx\8,
+               1+cf.by\8
+ for ty=1,cf.h do
+  local mask=0xffff
+  local row=ty+ty0-1 -- 1-based
+  for tx=1,cf.w do
+   if cf.grid[ty][tx]==sid_empty then
+    local bit=tx+tx0-2 -- 0-based
+    mask &= ~(1<<bit)
+   end
+  end
+  cf.collmasks[row]=mask
+ end
 end
 
 function cf_update()
  bg_update()
+ cf.wheel_t=1+cf.wheel_t%5
+ -- fall + collision checks
+ function collides(px,py)
+  if px<0 or px>127 or
+     py<0 or py>127 then
+   return false
+  end
+  local bit,row=px\8,1+py\8
+  local m=cf.collmasks[row]
+  return m&(1<<bit)~=0
+ end
+ -- x
+ local carx2=cf.carx+cf.carvx
+ for p in all(cf.coll_pts) do
+  -- compute point and tile
+  -- relative to gem grid
+  local px,py=carx2+p[1],
+            cf.cary+p[2]
+  if collides(px,py) then
+   -- collision
+   -- compute how far px can go
+   -- before it hits this tile.
+   local px0=cf.carx+p[1]
+   local pxs=cf.carvx<0
+         and (px0&0xfff8)\1
+         or  (px0|0x7)\1
+   carx2+=pxs-px
+   -- flip velocity
+   cf.carvx*=-0.5
+   -- todo: clamp small vx to zero
+   --       and advance.
+   -- todo: particles,damage
+   break
+  end
+ end
+ cf.carx=carx2
+ -- y
+ -- terminal velocity of 8 to avoid
+ -- tunneling through an entire tile
+ cf.carvy=min(8,cf.carvy+cf.gravity)
+ local cary2=cf.cary+cf.carvy
+ for p in all(cf.coll_pts) do
+  -- compute point and tile
+  -- relative to gem grid
+  local px,py=cf.carx+p[1],
+                cary2+p[2]
+  if px>128 then
+   cary2=cf.cary -- offscreen
+   break
+  elseif collides(px,py) then
+   -- collision
+   -- compute how far py can go
+   -- before it hits this tile.
+   local py0=cf.cary+p[2]
+   local pys=(py0|0x7)\1
+   cary2+=pys-py
+   -- zero velocity
+   cf.carvy=0
+   break
+  end
+ end
+ cf.cary=cary2
 end
 
 function cf_draw()
@@ -661,6 +774,31 @@ function cf_draw()
   end
   by+=8
  end
+ -- car
+ spr(sid_car,cf.carx,
+     cf.cary,8,3)
+ spr(sid_wheels[cf.wheel_t],
+     cf.carx+8,cf.cary+16)
+ spr(sid_wheels[cf.wheel_t],
+     cf.carx+40,cf.cary+16)
+ --[[
+ -- debug collision points
+ for p in all(cf.coll_pts) do
+  local px,py=p[1],p[2]
+  pset(cf.carx+px,cf.cary+py,14)
+ end
+ -- debug collision masks
+ for row=1,16 do
+  local mask=cf.collmasks[row]
+  local y=(row-1)*8
+  for bit=0,15 do
+   if mask&(1<<bit)~=0 then
+    local x=8*bit
+    rect(x,y,x+7,y+7,14)
+   end
+  end
+ end
+ --]]
 end
 __gfx__
 00000000955299999999999999999999999999999999999944442444999999999999999999939999999339999999999999999999955299999559999999999999
