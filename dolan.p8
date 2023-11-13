@@ -432,6 +432,8 @@ function match3_draw()
  for g in all(b.pgems) do
   spr(g.s,g.px,g.py)
  end
+ -- debug
+ print("temp: press ❎ to\nforce car to arrive",1,1,0)
 end
 -->8
 -- globals
