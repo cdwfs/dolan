@@ -303,6 +303,9 @@ function match3_update()
    bx=b.bx,
    by=b.by,
    runnerx=b.bx-16+8*b.cx,
+   dirtx=0,
+   dirty=72,
+   dirth=b.dirth,
   })
  end
  local mode_t=b.mode_timer/b.mode_timer_max
@@ -694,6 +697,9 @@ function cf_enter(args)
   h=args.h,
   grid=args.grid,
   runnerx=args.runnerx,
+  dirtx=args.dirtx,
+  dirty=args.dirty,
+  dirth=args.dirth,
   runnery=56,
   runner_t=1,
   collmasks={},
@@ -872,6 +878,11 @@ function cf_draw()
  -- draw running digger
  spr(sid_running[cf.runner_t],
      cf.runnerx,cf.runnery-5*abs(sin(cf.runner_t/16)),2,2)
+ -- draw dirt pile
+ local dsx,dsy=8*(sid_dirt_pile%16),
+               8*(sid_dirt_pile\16)
+ sspr(dsx,dsy,16,16,cf.dirtx,cf.dirty,
+      16,-cf.dirth,false,true)
  -- draw debris particles
  for p in all(cf.debris) do
   spr(p.s,p.px,p.py)
