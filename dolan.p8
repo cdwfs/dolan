@@ -78,6 +78,8 @@ b={}
 
 function match3_enter()
  b={
+  mode_timer=0,
+  mode_timer_max=30*60,
   w=10,
   h=7,
   bx=-100,
@@ -282,8 +284,13 @@ function update_pgems()
 end
 
 function match3_update()
- -- temp
+ -- debug temp
  if btnp(❎) then
+  b.mode_timer=b.mode_timer_max
+ end
+ -- update timer/sun
+ b.mode_timer+=1
+ if b.mode_timer>=b.mode_timer_max then
   set_next_mode("carfall",{
    grid=b.grid,
    w=b.w,
@@ -293,6 +300,10 @@ function match3_update()
    runnerx=b.bx-16+8*b.cx,
   })
  end
+ local mode_t=b.mode_timer/b.mode_timer_max
+ bg.sunx=-20+148*(mode_t)
+ bg.suny=16+8*cos(mode_t)
+ -- scroll
  if b.bx<24 then
   b.bx=min(24,b.bx+b.scrollx)
  else
@@ -463,8 +474,11 @@ sid_car_bumper2={158,174,190}
 sid_car_debris={170,171,172,186,187,188}
 sid_digging={1,33,3,35,11,43,13,45}
 sid_running={103,71,71,71,71,71,71,103}
+sid_sun=101
 -- sprite flags
 sf_rock=0
+-- constants
+palt_default=0x0040
 
 -- game modes
 -- don't edit these directly;
@@ -509,7 +523,7 @@ function _init()
  next_mode=game_mode
  next_mode_enter_args=nil
  --printh("****************")
- palt(0x0040) -- orange transparent by default
+ palt(palt_default) -- orange transparent by default
  cls(0)
  bg_init()
  modes[game_mode].enter()
@@ -590,6 +604,8 @@ function bg_init()
   cactx1=0,
   cactx2=-128,
   clouds={},
+  sunx=-16,
+  suny=0,
  }
  for i=1,16 do
   add_cloud(16*i-128)
@@ -618,6 +634,10 @@ end
 function bg_draw()
  -- sky
  rectfill(0,0,127,72,12)
+ -- sun
+ palt(0x0010)
+ spr(sid_sun,bg.sunx,bg.suny,2,2)
+ palt(palt_default)
  -- clouds
  for c in all(bg.clouds) do
   ovalfill(c.x,c.y,c.x+c.w,c.y+c.h,c.col)
