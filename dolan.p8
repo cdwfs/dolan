@@ -881,7 +881,7 @@ function cf_draw()
  -- debug collision points
  for p in all(cf.coll_pts) do
   local px,py=p[1],p[2]
-  pset(cf.carx+px,cf.cary+py,14)
+  pset(cf.carx+px,cf.cary+py,-7)
  end
  -- debug collision masks
  for row=1,16 do
@@ -890,7 +890,7 @@ function cf_draw()
   for bit=0,15 do
    if mask&(1<<bit)~=0 then
     local x=8*bit
-    rect(x,y,x+7,y+7,14)
+    rect(x,y,x+7,y+7,-7)
    end
   end
  end
