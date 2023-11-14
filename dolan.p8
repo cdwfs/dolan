@@ -108,7 +108,6 @@ function match3_enter()
   selecting=false,
   settling=false,
   digger_t=0,
-  digger_f={1,33,3,35,11,43,13,45},
   clampx=function(this,x)
    return max(1,min(this.w,x))
   end,
@@ -426,7 +425,7 @@ function match3_draw()
  end
  -- draw diggin' dude
  b.digger_t+=1
- spr(b.digger_f[1+((b.digger_t\4)%8)],
+ spr(sid_digging[1+((b.digger_t\4)%8)],
      b.bx-16+8*b.cx,56,2,2)
  -- draw particle gems
  for g in all(b.pgems) do
@@ -463,6 +462,7 @@ sid_cloud3=68
 sid_car_bumper1={145,161,177}
 sid_car_bumper2={158,174,190}
 sid_car_debris={170,171,172,186,187,188}
+sid_digging={1,33,3,35,11,43,13,45}
 -- sprite flags
 sf_rock=0
 
