@@ -110,6 +110,9 @@ function match3_enter()
   selecting=false,
   settling=false,
   digger_t=0,
+  dirtx=0,
+  dirty=72,
+  dirth=0,
   clampx=function(this,x)
    return max(1,min(this.w,x))
   end,
@@ -139,6 +142,7 @@ function match3_enter()
  -- iterate until no matches
  while clear_matches(true)>0 do
   b.settling=false
+  b.dirth=0
   for y=1,b.h do
    for x=1,b.w do
     b.yoffs[y][x]=0
@@ -189,6 +193,7 @@ function clear_matches(skip_fx)
    ::match_end::
    end
  end
+ b.dirth+=mtotal
  if mtotal>0 then
   for y=1,b.h do
    for x=1,b.w do
@@ -437,6 +442,11 @@ function match3_draw()
  b.digger_t+=1
  spr(sid_digging[1+((b.digger_t\4)%8)],
      b.bx-16+8*b.cx,56,2,2)
+ -- draw dirt pile
+ local dsx,dsy=8*(sid_dirt_pile%16),
+               8*(sid_dirt_pile\16)
+ sspr(dsx,dsy,16,16,b.dirtx,b.dirty,
+      16,-b.dirth,false,true)
  -- draw particle gems
  for g in all(b.pgems) do
   spr(g.s,g.px,g.py)
@@ -449,6 +459,10 @@ end
 
 function clamp(x,low,hi)
  return max(low,min(hi,x))
+end
+
+function spr_addr(sid)
+ return 512*(sid\16)+4*(sid%16)
 end
 
 -- sounds
@@ -475,6 +489,7 @@ sid_car_debris={170,171,172,186,187,188}
 sid_digging={1,33,3,35,11,43,13,45}
 sid_running={103,71,71,71,71,71,71,103}
 sid_sun=101
+sid_dirt_pile=65
 -- sprite flags
 sf_rock=0
 -- constants
@@ -771,9 +786,6 @@ function cf_update()
    -- with damaged versions
    -- (only needs to happen on
    -- the first hit, but enh)
-   function spr_addr(sid)
-    return 512*(sid\16)+4*(sid%16)
-   end
    for i=1,3 do
     local src,dst=spr_addr(sid_car_bumper2[i]),
                   spr_addr(sid_car_bumper1[i])
