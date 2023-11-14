@@ -294,8 +294,6 @@ function match3_update()
   })
  end
  if b.bx<24 then
-  if (btn(⬅️)) scrollx+=1
-  if (btn(➡️)) scrollx-=1
   b.bx=min(24,b.bx+b.scrollx)
  else
   b.interactive=true
