@@ -468,6 +468,21 @@ function spr_addr(sid)
  return 512*(sid\16)+4*(sid%16)
 end
 
+-- sprite rotation c/o https://www.lexaloffle.com/bbs/?tid=38548
+--97 tokens with scaling and arbitrary size
+function rspr(x,y,rot,mx,my,w,flip,scale)
+ scale=scale or 1
+ w*=scale*4
+ local cs, ss = cos(rot)*.125/scale,sin(rot)*.125/scale
+ local sx, sy = mx+cs*-w, my+ss*-w
+ local hx = flip and -w or w
+ local halfw = -w
+ for py=y-w, y+w do
+  tline(x-hx, py, x+hx, py, sx-ss*halfw, sy+cs*halfw, cs, ss)
+  halfw+=1
+ end
+end
+
 -- sounds
 s_click=0
 s_select=1
