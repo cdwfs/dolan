@@ -649,7 +649,7 @@ function bg_update(dx)
  dx=dx or 0
  -- update clouds
  for c in all(bg.clouds) do
-  c.x+=c.vx+0.05*dx
+  c.x+=c.vx+0.25*dx
   if (c.x>=128) c.x-=256
  end
  -- update cacti
@@ -694,8 +694,7 @@ function add_cloud(x)
    y=by+rnd(3)\1,
    w=10+rnd(5),
    h=2+rnd(4),
-   vx=0.03,
-   --fp=i<2 and 0 or rnd(0xffff)\1+0.5,
+   vx=0.02,
    col=i<2 and 6 or 7,
   })
  end
