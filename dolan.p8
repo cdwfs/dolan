@@ -188,7 +188,7 @@ function match3_enter()
   pgems={},
   selecting=false,
   settling=false,
-  digger_t=0,
+  digger_a=anim(sid_digging,4),
   dirtx=0,
   dirty=72,
   dirth=0,
@@ -198,14 +198,10 @@ function match3_enter()
   clampy=function(this,y)
    return max(1,min(this.h,y))
   end,
-  cursor_fill=function(this)
-   if this.selecting then
-    this.crs_t=1+this.crs_t%4
-    return this.crs_fills[this.crs_t]
-   else
-    this.crs_t=0
-    return this.crs_fills[1]
-   end
+  cursor_fill=function(_ENV)
+   crs_t = selecting
+           and 1+crs_t%4 or 1
+   return crs_fills[crs_t]
   end,
  }
  -- populate grid
@@ -521,8 +517,7 @@ function match3_draw()
   fillp()
  end
  -- draw diggin' dude
- b.digger_t+=1
- spr(sid_digging[1+((b.digger_t\4)%8)],
+ spr(b.digger_a:s(),
      b.bx-16+8*b.cx,56,2,2)
  -- draw dirt pile
  local dsx,dsy=8*(sid_dirt_pile%16),
