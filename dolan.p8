@@ -495,6 +495,7 @@ s_cancel=2
 s_dope1=3
 -- sprite ids
 sid_empty=16
+sid_invisible=32 -- looks empty, but treated as occupied
 sid_gems={5,21,37,53}
 sid_rock1=25
 sid_rock2a=7
@@ -557,7 +558,12 @@ function _init()
    enter=cf_enter,
    update=cf_update,
    draw=cf_draw,
-  }
+  },
+  carbury={
+   enter=cb_enter,
+   update=cb_update,
+   draw=cb_draw,
+  },
  }
  game_mode="menu"
  next_mode=game_mode
@@ -780,6 +786,23 @@ function update_debris()
 end
 
 function cf_update()
+ -- debug temp: advance to next
+ -- mode
+ if btnp(❎) then
+  set_next_mode("carbury",{
+   grid=cf.grid,
+   w=cf.w,
+   h=cf.h,
+   bx=cf.bx,
+   by=cf.by,
+   dirtx=cf.dirtx,
+   dirty=cf.dirty,
+   dirth=cf.dirth,
+   carx=cf.carx,
+   cary=cf.cary,
+   wheel_r=cf.wheel_r,
+  })
+ end
  bg_update()
  update_debris()
  cf.wheel_r=(cf.wheel_r+0.17*cf.carvx)%1
@@ -914,6 +937,8 @@ function cf_draw()
  for p in all(cf.debris) do
   spr(p.s,p.px,p.py)
  end
+ -- debug
+ print("temp: press ❎ to\nadvance to car-burying",1,1,0)
      
  --[[
  -- debug collision points
@@ -933,6 +958,90 @@ function cf_draw()
   end
  end
  --]]
+end
+-->8
+-- car-burying
+cb={}
+
+function cb_enter(args)
+ cb={
+  bx=args.bx,
+  by=args.by,
+  w=args.w,
+  h=args.h,
+  grid=args.grid,
+  dirtx=args.dirtx,
+  dirty=args.dirty,
+  dirth=args.dirth,
+  carx=args.carx,
+  cary=args.cary,
+  wheel_r=args.wheel_r,
+  cx=1,  
+ }
+ -- determine which grid cells
+ -- are occupied by the car.
+ -- this code hard-codes some
+ -- assumptions about the shape
+ -- of the car sprite.
+ local cgx,cgy=1+(cb.carx-cb.bx)\8,
+               1+(cb.cary+4-cb.by)\8
+ local heights={1,1,0,0,0,0,0,0}
+ for i=1,#heights do
+  local x=cgx+i-1
+  if (x>cb.w) break
+  for y=cgy+heights[i],cb.h do
+   if y>0 and cb.grid[y][x]==sid_empty then
+    cb.grid[y][x]=sid_invisible
+   end
+  end
+ end
+end            
+
+function cb_update()
+ bg_update()
+end
+
+function cb_draw()
+ -- draw bg
+ bg_draw()
+ -- draw board
+ map(2,9,cb.bx-8,cb.by,12,7)
+ local by=cb.by
+ for y=1,cb.h do
+  local bx=cb.bx
+  for x=1,cb.w do
+   spr(cb.grid[y][x],bx,by)
+   bx+=8
+  end
+  by+=8
+ end
+ -- draw car
+ rspr(cb.carx+11,
+      cb.cary+25,cb.wheel_r,
+      m_wheelx,m_wheely,m_wheelw,
+      true,0.75)
+ rspr(cb.carx+47,
+      cb.cary+25,cb.wheel_r+0.17,
+      m_wheelx,m_wheely,m_wheelw,
+      true,0.75)
+ spr(sid_car,cb.carx,
+     cb.cary,8,4)
+ -- draw dirt pile
+ local dsx,dsy=8*(sid_dirt_pile%16),
+               8*(sid_dirt_pile\16)
+ sspr(dsx,dsy,16,16,cb.dirtx,cb.dirty,
+      16,-cb.dirth,false,true)
+ -- debug
+ for y=1,cb.h do
+  local row=cb.grid[y]
+  local ry=cb.by+8*y-8
+  for x,s in pairs(row) do
+   local rx=cb.bx+8*x-8
+   if s==sid_invisible then
+    rect(rx,ry,rx+7,ry+7,-2)
+   end
+  end
+ end
 end
 __gfx__
 00000000955299999999999999999999999999999999999944442444999999999999999999939999999339999999999999999999955299999559999999999999
