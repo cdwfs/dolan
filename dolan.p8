@@ -4,77 +4,127 @@ __lua__
 -- dolan's cadillac
 --    picostevemo
 
-mm={}
+-- globals
 
-function menu_enter()
- cls(0)
- mm={
-  scrollx=1,
-  titlex=32,
-  titley=12,
-  carx=32,
-  cary=47,
-  wheel_r=0,
+function clamp(x,low,hi)
+ return max(low,min(hi,x))
+end
+
+function spr_addr(sid)
+ return 512*(sid\16)+4*(sid%16)
+end
+
+-- sprite rotation c/o https://www.lexaloffle.com/bbs/?tid=38548
+--97 tokens with scaling and arbitrary size
+function rspr(x,y,rot,mx,my,w,flip,scale)
+ scale=scale or 1
+ w*=scale*4
+ local cs, ss = cos(rot)*.125/scale,sin(rot)*.125/scale
+ local sx, sy = mx+cs*-w, my+ss*-w
+ local hx = flip and -w or w
+ local halfw = -w
+ for py=y-w, y+w do
+  tline(x-hx, py, x+hx, py, sx-ss*halfw, sy+cs*halfw, cs, ss)
+  halfw+=1
+ end
+end
+
+-- sounds
+s_click=0
+s_select=1
+s_cancel=2
+s_dope1=3
+-- sprite ids
+sid_empty=16
+sid_invisible=32 -- looks empty, but treated as occupied
+sid_gems={5,21,37,53}
+sid_rock1=25
+sid_rock2a=7
+sid_rock2b=8
+sid_rock2c=23
+sid_rock2d=24
+sid_car=129
+sid_cloud1=65
+sid_cloud2=67
+sid_cloud3=68
+sid_car_bumper1={145,146,161,162}
+sid_car_bumper2={141,142,157,158}
+sid_car_debris={170,171,172,186,187,188}
+sid_digging={1,33,3,35,11,43,13,45}
+sid_running={103,71,71,71,71,71,71,103}
+sid_sun=101
+sid_dirt_pile=65
+-- rotating sprite map locations
+m_wheelx,m_wheely,m_wheelw=2,18,2
+-- sprite flags
+sf_rock=0
+-- constants
+palt_default=0x0040
+
+-- game modes
+-- don't edit these directly;
+-- call set_next_mode() instead.
+modes={}
+game_mode=""
+next_mode=""
+next_mode_enter_args={}
+
+-- switch to a new game mode.
+-- args is passed to the new
+-- mode's enter() function.
+--
+-- the transition takes place
+-- on the frame following the
+-- one in which this function
+-- is called.
+function set_next_mode(mode,args)
+ next_mode=mode
+ next_mode_enter_args=args
+end
+
+function _init()
+ modes={
+  menu={
+   enter=menu_enter,
+   update=menu_update,
+   draw=menu_draw,
+  },
+  match3={
+   enter=match3_enter,
+   update=match3_update,
+   draw=match3_draw,
+  },
+  carfall={
+   enter=cf_enter,
+   update=cf_update,
+   draw=cf_draw,
+  },
+  carbury={
+   enter=cb_enter,
+   update=cb_update,
+   draw=cb_draw,
+  },
  }
- --music(0,2000)
+ game_mode="menu"
+ next_mode=game_mode
+ next_mode_enter_args=nil
+ --printh("****************")
+ palt(palt_default) -- orange transparent by default
+ cls(0)
+ bg_init()
+ modes[game_mode].enter()
 end
 
-function menu_update()
- mm.carx+=mm.scrollx-1
- mm.titlex+=mm.scrollx-1
- if mm.carx>128 then
-  set_next_mode("match3")
- end
- bg_update(mm.scrollx)
- mm.wheel_r=(mm.wheel_r+.1793)%1
- if btnp(🅾️) and mm.scrollx<2 then
-  sfx(s_dope1,0)
-  mm.scrollx=2
- end
- -- tmp music experiment:
- -- remove loop end from current
- -- music pattern
- if btnp(❎) then
-  poke(0x3101,0x42)
- end
+function _update60()
+ modes[game_mode].update()
 end
 
-function menu_draw()
- -- background
- bg_draw()
- -- car
- local cardx=2
- -- add a bit of random wheel bumpiness
- local w1y,w2y=rnd()<0.01 and 1 or 0,
-               rnd()<0.01 and 1 or 0
- rspr(mm.carx+11+cardx,
-      mm.cary+21-w1y,mm.wheel_r,
-      m_wheelx,m_wheely,m_wheelw,
-      true,0.75)
- rspr(mm.carx+47+cardx,
-      mm.cary+21-w2y,mm.wheel_r+0.17,
-      m_wheelx,m_wheely,m_wheelw,
-      true,0.75)
- spr(sid_car,mm.carx+cardx,
-     mm.cary,8,3)
- -- title
- --?"\^w\^t\f1\^j93dolan's\^j96\+cfcadillac\^j93\+ff\f9dolan's\^j96\+becadillac"
- print("\^w\^tdolan's",
-       mm.titlex+1+4,
-       mm.titley+1,1)
- print("\^w\^tdolan's",
-       mm.titlex+4,
-       mm.titley,9)
- print("\^w\^tcadillac",
-       mm.titlex+1,
-       mm.titley+12+1,1)
- print("\^w\^tcadillac",
-       mm.titlex,
-       mm.titley+12,9)
- -- menu
- if mm.scrollx<2 then
-  print("press 🅾️ to start",30,96,0)
-  print("press 🅾️ to start",29,95,7)
+function _draw()
+ modes[game_mode].draw()
+ --print(game_mode,1,1,0)
+ if next_mode~=game_mode then
+  game_mode=next_mode
+  modes[game_mode].enter(next_mode_enter_args)
  end
 end
 -->8
@@ -463,127 +513,78 @@ function match3_draw()
  print("temp: press ❎ to\nforce car to arrive",1,1,0)
 end
 -->8
--- globals
+-- main menu
+mm={}
 
-function clamp(x,low,hi)
- return max(low,min(hi,x))
+function menu_enter()
+ cls(0)
+ mm={
+  scrollx=1,
+  titlex=32,
+  titley=12,
+  carx=32,
+  cary=47,
+  wheel_r=0,
+ }
+ --music(0,2000)
 end
 
-function spr_addr(sid)
- return 512*(sid\16)+4*(sid%16)
-end
-
--- sprite rotation c/o https://www.lexaloffle.com/bbs/?tid=38548
---97 tokens with scaling and arbitrary size
-function rspr(x,y,rot,mx,my,w,flip,scale)
- scale=scale or 1
- w*=scale*4
- local cs, ss = cos(rot)*.125/scale,sin(rot)*.125/scale
- local sx, sy = mx+cs*-w, my+ss*-w
- local hx = flip and -w or w
- local halfw = -w
- for py=y-w, y+w do
-  tline(x-hx, py, x+hx, py, sx-ss*halfw, sy+cs*halfw, cs, ss)
-  halfw+=1
+function menu_update()
+ mm.carx+=mm.scrollx-1
+ mm.titlex+=mm.scrollx-1
+ if mm.carx>128 then
+  set_next_mode("match3")
+ end
+ bg_update(mm.scrollx)
+ mm.wheel_r=(mm.wheel_r+.1793)%1
+ if btnp(🅾️) and mm.scrollx<2 then
+  sfx(s_dope1,0)
+  mm.scrollx=2
+ end
+ -- tmp music experiment:
+ -- remove loop end from current
+ -- music pattern
+ if btnp(❎) then
+  poke(0x3101,0x42)
  end
 end
 
--- sounds
-s_click=0
-s_select=1
-s_cancel=2
-s_dope1=3
--- sprite ids
-sid_empty=16
-sid_invisible=32 -- looks empty, but treated as occupied
-sid_gems={5,21,37,53}
-sid_rock1=25
-sid_rock2a=7
-sid_rock2b=8
-sid_rock2c=23
-sid_rock2d=24
-sid_car=129
-sid_cloud1=65
-sid_cloud2=67
-sid_cloud3=68
-sid_car_bumper1={145,146,161,162}
-sid_car_bumper2={141,142,157,158}
-sid_car_debris={170,171,172,186,187,188}
-sid_digging={1,33,3,35,11,43,13,45}
-sid_running={103,71,71,71,71,71,71,103}
-sid_sun=101
-sid_dirt_pile=65
--- rotating sprite map locations
-m_wheelx,m_wheely,m_wheelw=2,18,2
--- sprite flags
-sf_rock=0
--- constants
-palt_default=0x0040
-
--- game modes
--- don't edit these directly;
--- call set_next_mode() instead.
-modes={}
-game_mode=""
-next_mode=""
-next_mode_enter_args={}
-
--- switch to a new game mode.
--- args is passed to the new
--- mode's enter() function.
---
--- the transition takes place
--- on the frame following the
--- one in which this function
--- is called.
-function set_next_mode(mode,args)
- next_mode=mode
- next_mode_enter_args=args
-end
-
-function _init()
- modes={
-  menu={
-   enter=menu_enter,
-   update=menu_update,
-   draw=menu_draw,
-  },
-  match3={
-   enter=match3_enter,
-   update=match3_update,
-   draw=match3_draw,
-  },
-  carfall={
-   enter=cf_enter,
-   update=cf_update,
-   draw=cf_draw,
-  },
-  carbury={
-   enter=cb_enter,
-   update=cb_update,
-   draw=cb_draw,
-  },
- }
- game_mode="menu"
- next_mode=game_mode
- next_mode_enter_args=nil
- --printh("****************")
- palt(palt_default) -- orange transparent by default
- cls(0)
- bg_init()
- modes[game_mode].enter()
-end
-
-function _update60()
- modes[game_mode].update()
-end
-
-function _draw()
- modes[game_mode].draw()
- --print(game_mode,1,1,0)
- if next_mode~=game_mode then
-  game_mode=next_mode
-  modes[game_mode].enter(next_mode_enter_args)
+function menu_draw()
+ -- background
+ bg_draw()
+ -- car
+ local cardx=2
+ -- add a bit of random wheel bumpiness
+ local w1y,w2y=rnd()<0.01 and 1 or 0,
+               rnd()<0.01 and 1 or 0
+ rspr(mm.carx+11+cardx,
+      mm.cary+21-w1y,mm.wheel_r,
+      m_wheelx,m_wheely,m_wheelw,
+      true,0.75)
+ rspr(mm.carx+47+cardx,
+      mm.cary+21-w2y,mm.wheel_r+0.17,
+      m_wheelx,m_wheely,m_wheelw,
+      true,0.75)
+ spr(sid_car,mm.carx+cardx,
+     mm.cary,8,3)
+ -- title
+ --?"\^w\^t\f1\^j93dolan's\^j96\+cfcadillac\^j93\+ff\f9dolan's\^j96\+becadillac"
+ print("\^w\^tdolan's",
+       mm.titlex+1+4,
+       mm.titley+1,1)
+ print("\^w\^tdolan's",
+       mm.titlex+4,
+       mm.titley,9)
+ print("\^w\^tcadillac",
+       mm.titlex+1,
+       mm.titley+12+1,1)
+ print("\^w\^tcadillac",
+       mm.titlex,
+       mm.titley+12,9)
+ -- menu
+ if mm.scrollx<2 then
+  print("press 🅾️ to start",30,96,0)
+  print("press 🅾️ to start",29,95,7)
  end
 end
 -->8
