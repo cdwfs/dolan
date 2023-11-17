@@ -573,6 +573,15 @@ function menu_update()
  end
 end
 
+sid_walk1={67,69}
+sid_walk2_top=64
+sid_walk2_bot={80,96,80,112}
+walk1=anim(sid_walk1,8)
+walk2=anim(sid_walk2_bot,{4,8,4,8})
+walk1x=30
+walk2x=120
+walk1dx=0.5
+walk2dx=0.5
 function menu_draw()
  -- background
  bg_draw()
@@ -610,6 +619,14 @@ function menu_draw()
   print("press 🅾️ to start",30,96,0)
   print("press 🅾️ to start",29,95,7)
  end
+ -- debug
+ -- draw walk cycle 1
+ walk1x=walk1x<00 and 30 or walk1x-walk1dx
+ spr(walk1:s(),walk1x,40,2,2)
+ -- draw walk cycle 2
+ walk2x=walk2x<90 and 120 or walk2x-walk2dx
+ spr(sid_walk2_top,walk2x,40,1,1)
+ spr(walk2:s(),walk2x,48,1,1)
 end
 -->8
 -- debug
