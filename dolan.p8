@@ -897,7 +897,7 @@ function cf_draw()
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
  rspr(cf.carx+47,
-      cf.cary+25,mm.wheel_r+0.17,
+      cf.cary+25,cf.wheel_r+0.17,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
  spr(sid_car,cf.carx,
