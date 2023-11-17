@@ -14,6 +14,30 @@ function spr_addr(sid)
  return 512*(sid\16)+4*(sid%16)
 end
 
+-- creates an animation from a
+-- list of sprites and frame counts.
+-- one anim per running instance (all frames & counts will be stored per-instance)
+-- a:s() increments the frame counter and returns the sprite to show for the new frame.
+-- if fcounts is a number,each sprite is shown for that many frames.
+-- if fcounts is omitted, each sprite is shown for one frame.
+function anim(sprites,fcounts)
+ return {
+  sp=sprites,
+  fc=fcounts or 1,
+  fct=type(fcounts)=="table",
+  si=0,
+  c=1,
+  s=function(_ENV)
+   c-=1
+   if c==0 then
+    si=1+si%#sp
+    c=fct and fc[si] or fc
+   end
+   return sp[si]
+  end,
+ }
+end
+
 -- sprite rotation c/o https://www.lexaloffle.com/bbs/?tid=38548
 --97 tokens with scaling and arbitrary size
 function rspr(x,y,rot,mx,my,w,flip,scale)
