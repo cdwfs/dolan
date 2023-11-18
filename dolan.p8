@@ -78,6 +78,8 @@ sid_digging={1,33,3,35,11,43,13,45}
 sid_running={103,71,71,71,71,71,71,103}
 sid_sun=101
 sid_dirt_pile=65
+sid_walk2_top=64
+sid_walk2_bot={80,96,80,112}
 -- rotating sprite map locations
 m_wheelx,m_wheely,m_wheelw=2,18,2
 -- sprite flags
@@ -568,15 +570,6 @@ function menu_update()
  end
 end
 
-sid_walk1={67,69}
-sid_walk2_top=64
-sid_walk2_bot={80,96,80,112}
-walk1=anim(sid_walk1,8)
-walk2=anim(sid_walk2_bot,{4,8,4,8})
-walk1x=30
-walk2x=120
-walk1dx=0.5
-walk2dx=0.5
 function menu_draw()
  -- background
  bg_draw()
@@ -615,13 +608,6 @@ function menu_draw()
   print("press 🅾️ to start",29,95,7)
  end
  -- debug
- -- draw walk cycle 1
- walk1x=walk1x<00 and 30 or walk1x-walk1dx
- spr(walk1:s(),walk1x,40,2,2)
- -- draw walk cycle 2
- walk2x=walk2x<90 and 120 or walk2x-walk2dx
- spr(sid_walk2_top,walk2x,40,1,1)
- spr(walk2:s(),walk2x,48,1,1)
 end
 -->8
 -- debug
@@ -1013,6 +999,10 @@ function cb_enter(args)
   cary=args.cary,
   wheel_r=args.wheel_r,
   cx=1,
+  interactive=false,
+  diggerx=-8,
+  walk_a=anim(sid_walk2_bot,{4,8,4,8}),
+  dig_a=anim(sid_digging,4),
  }
  -- determine which grid cells
  -- are occupied by the car.
@@ -1044,6 +1034,12 @@ end
 
 function cb_update()
  bg_update()
+ if not cb.interactive then
+  cb.diggerx+=0.5
+  if cb.diggerx>=cb.bx-8 then
+   cb.interactive=true
+  end
+ end
 end
 
 function cb_draw()
@@ -1076,6 +1072,18 @@ function cb_draw()
                8*(sid_dirt_pile\16)
  sspr(dsx,dsy,16,16,cb.dirtx,cb.dirty,
       16,-cb.dirth,false,true)
+ -- draw digger
+ if cb.interactive then
+  spr(b.digger_a:s(),
+      cb.bx-16+8*cb.cx,
+      cb.by-16,2,2)
+ else
+  -- draw walking
+  spr(sid_walk2_top,
+      cb.diggerx,cb.by-16,1,1,true)
+  spr(cb.walk_a:s(),
+      cb.diggerx,cb.by-8,1,1,true)
+ end
  -- debug
  for y=1,cb.h do
   local row=cb.grid[y]
