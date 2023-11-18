@@ -1012,23 +1012,32 @@ function cb_enter(args)
   carx=args.carx,
   cary=args.cary,
   wheel_r=args.wheel_r,
-  cx=1,  
+  cx=1,
  }
  -- determine which grid cells
  -- are occupied by the car.
- -- this code hard-codes some
- -- assumptions about the shape
- -- of the car sprite.
- local cgx,cgy=1+(cb.carx-cb.bx)\8,
-               1+(cb.cary-cb.by)\8
- local heights={1,1,0,0,0,0,0,0}
- for i=1,#heights do
-  local x=cgx+i-1
-  if (x>cb.w) break
-  for y=cgy+heights[i],cb.h do
-   if y>0 and cb.grid[y][x]==sid_empty then
-    cb.grid[y][x]=sid_invisible
+ hull_pts={
+  --{0,8},{8,8},{16,5},{21,0},{29,0},{37,0},{45,0},{52,0},{57,8},
+  -- move points slightly inward
+  -- to make sure a single pixel
+  -- in a cell doesn't mark it as full
+  {3,11},{10,10},{18,5},{22,2},{30,2},{38,2},{46,2},{52,2},{55,8},{55,16},{57,20},
+ }
+ local cbx,cby=cb.carx-cb.bx,cb.cary-cb.by
+ for p in all(hull_pts) do
+  local px,py=cbx+p[1],cby+p[2]
+  local gx,gy=1+px\8,1+py\8
+  if gx>0 and gx<=cb.w and
+     gy>0 and gy<=cb.h then
+   for y=gy,cb.h do
+    if cb.grid[y][gx]==sid_empty then
+     cb.grid[y][gx]=sid_invisible
+    end
    end
+  else
+   -- todo: this would indicate
+   -- the car is not fully buried,
+   -- so game over?
   end
  end
 end            
