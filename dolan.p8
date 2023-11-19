@@ -881,6 +881,7 @@ function cf_update()
  end
  -- x
  local carx2=cf.carx+cf.carvx
+ local xfix=0
  for p in all(cf.coll_pts) do
   -- compute point and tile
   -- relative to gem grid
@@ -894,19 +895,8 @@ function cf_update()
    local pxs=cf.carvx<0
          and (px0&0xfff8)\1
          or  (px0|0x7)\1
-   carx2+=pxs-px
-   -- overwrite bumper sprites
-   -- with damaged versions
-   -- (only needs to happen on
-   -- the first hit, but enh)
-   for i,s in pairs(sid_car_bumper2) do
-    local src,dst=spr_addr(s),
-                  spr_addr(sid_car_bumper1[i])
-    for y=0,7 do
-     memcpy(dst,src,4)
-     src+=16*4
-     dst+=16*4
-    end
+   if abs(pxs-px)>abs(xfix) then
+    xfix=pxs-px
    end
    -- spawn debris particles
    -- at higher velocities
@@ -922,14 +912,29 @@ function cf_update()
      })
     end
    end
-   -- flip velocity
-   -- todo: clamp small vx to zero
-   --       and advance.
-   cf.carvx*=-0.5
-   if abs(cf.carvx)<0.25 then
-    cf.carvx=0
+  end
+ end
+ if xfix~=0 then
+  carx2+=xfix
+  -- overwrite bumper sprites
+  -- with damaged versions
+  -- (only needs to happen on
+  -- the first hit, but enh)
+  for i,s in pairs(sid_car_bumper2) do
+   local src,dst=spr_addr(s),
+                 spr_addr(sid_car_bumper1[i])
+   for y=0,7 do
+    memcpy(dst,src,4)
+    src+=16*4
+    dst+=16*4
    end
-   break
+  end
+  -- flip velocity
+  -- todo: clamp small vx to zero
+  --       and advance.
+  cf.carvx*=-0.5
+  if abs(cf.carvx)<0.25 then
+   cf.carvx=0
   end
  end
  cf.carx=carx2
@@ -938,6 +943,7 @@ function cf_update()
  -- tunneling through an entire tile
  cf.carvy=min(8,cf.carvy+cf.gravity)
  local cary2=cf.cary+cf.carvy
+ local yfix=0
  for p in all(cf.coll_pts) do
   -- compute point and tile
   -- relative to gem grid
@@ -949,11 +955,15 @@ function cf_update()
    -- before it hits this tile.
    local py0=cf.cary+p[2]
    local pys=(py0|0x7)\1
-   cary2+=pys-py
-   -- zero velocity
-   cf.carvy=0
-   break
+   if abs(pys-py)>abs(yfix) then
+    yfix=pys-py
+   end
   end
+ end
+ if yfix~=0 then
+  cary2+=yfix
+  -- zero velocity
+  cf.carvy=0
  end
  cf.cary=cary2
  -- animate runner
