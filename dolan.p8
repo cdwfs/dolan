@@ -663,6 +663,43 @@ function pb(addr,n)
          sub(tostr(peek(addr+i),1),5,6))
  end
 end
+
+-- overwrite the grid with a
+-- specific pattern, to simplify
+-- testing
+function debug_grid(grid)
+ local g,r,p,y=sid_gems[1],
+               sid_gems[2],
+               sid_gems[3],
+               sid_gems[4]
+ local a,b,c,d,e,_=sid_rock2a,
+                   sid_rock2b,
+                   sid_rock2c,
+                   sid_rock2d,
+                   sid_rock1,
+                   sid_empty
+ return {
+ --[[ blank slate
+  {_,_,_,_,_,_,_,_,_,_},
+  {_,_,_,_,_,_,_,_,_,_},
+  {_,_,_,_,_,_,_,_,_,_},
+  {_,_,_,_,_,_,_,_,_,_},
+  {_,_,_,_,_,_,_,_,_,_},
+  {_,_,_,_,_,_,_,_,_,_},
+  {_,_,_,_,_,_,_,_,_,_},
+ --]]
+ --[[
+  -- collision bug
+  {_,_,_,_,_,_,_,_,_,g},
+  {_,_,_,_,_,_,_,_,_,y},
+  {p,_,_,_,_,_,_,_,_,p},
+  {y,_,_,_,a,b,_,_,r,r},
+  {r,_,_,p,c,d,_,_,y,g},
+  {g,_,e,g,y,_,r,_,p,r},
+  {g,_,g,y,p,_,p,_,r,y},
+--]]
+ }
+end
 -->8
 -- background
 bg={}
