@@ -428,8 +428,8 @@ function match3_update()
    bx=b.bx,
    by=b.by,
    runnerx=b.bx-16+8*b.cx,
-   dirtx=0,
-   dirty=72,
+   dirtx=b.dirtx,
+   dirty=b.dirty,
    dirth=b.dirth,
   })
  end
