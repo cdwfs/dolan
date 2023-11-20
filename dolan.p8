@@ -30,25 +30,54 @@ function fade(step)
 end
 
 -- creates an animation from a
--- list of sprites and frame counts.
+-- list of values and frame counts.
 -- one anim per running instance (all frames & counts will be stored per-instance)
--- a:s() increments the frame counter and returns the sprite to show for the new frame.
--- if fcounts is a number,each sprite is shown for that many frames.
--- if fcounts is omitted, each sprite is shown for one frame.
-function anim(sprites,fcounts)
+-- a:nextv() increments the frame counter and returns the value for the new frame.
+--       or nil when there are no frames remaining
+-- if fcounts is a number,each value's fcount is that number.
+-- if fcounts is omitted, each value's fcount is 1.
+function anim(values,fcounts)
  return {
-  sp=sprites,
+  vals=values,
   fc=fcounts or 1,
-  fct=type(fcounts)=="table",
-  si=0,
+  fcit=type(fcounts)=="table",
+  i=0,
   c=1,
-  s=function(_ENV)
+  nextv=function(_ENV)
+   -- todo: prevent wraparound
+   -- error after anim ends.
    c-=1
    if c==0 then
-    si=1+si%#sp
-    c=fct and fc[si] or fc
+    i+=1
+    c=fcit and fc[i] or fc
    end
-   return sp[si]
+   return vals[i]
+  end,
+  rewind=function(_ENV)
+   i,c=0,1
+  end
+ }
+end
+-- create a graph of interconnected
+-- animation states.
+-- each entry in state is a table with
+-- two entries: {anim,next_state}
+function animgraph(states,start_state)
+ return {
+  states=states,
+  s=states[start_state],
+  nextv=function(_ENV)
+   local v=s[1]:nextv()
+   while not v do
+    s=states[s[2]]
+    s[1]:rewind()
+    v=s[1]:nextv()
+   end
+   return v
+  end,
+  to=function(_ENV,new_state)
+   s=states[new_state]
+   s[1]:rewind()
   end,
  }
 end
@@ -207,7 +236,9 @@ function match3_enter()
   pgems={},
   selecting=false,
   settling=false,
-  digger_a=anim(sid_digging,4),
+  digger_ag=animgraph({
+   dig={anim(sid_digging,4),"dig"},
+  },"dig"),
   dirtx=0,
   dirty=72,
   dirth=0,
@@ -536,7 +567,7 @@ function match3_draw()
   fillp()
  end
  -- draw diggin' dude
- spr(b.digger_a:s(),
+ spr(b.digger_ag:nextv(),
      b.bx-16+8*b.cx,56,2,2)
  -- draw dirt pile
  local dsx,dsy=8*(sid_dirt_pile%16),
@@ -1069,8 +1100,10 @@ function cb_enter(args)
   cx=1,
   interactive=false,
   diggerx=-8,
-  walk_a=anim(sid_walking,8),
-  dig_a=anim(sid_digging,4),
+  digger_ag=animgraph({
+   walk={anim(sid_walking,8),"walk"},
+   dig={anim(sid_digging,4),"dig"},
+  },"walk"),
   window_r={30,1,38,1},
   armx=34,
   army=7,
@@ -1116,6 +1149,7 @@ function cb_update()
   cb.diggerx+=0.5
   if cb.diggerx>=cb.bx-8 then
    cb.interactive=true
+   cb.digger_ag:to("dig")
   end
  end
 end
@@ -1179,12 +1213,12 @@ function cb_draw()
       16,-cb.dirth,false,true)
  -- draw digger
  if cb.interactive then
-  spr(b.digger_a:s(),
+  spr(b.digger_ag:nextv(),
       cb.bx-16+8*cb.cx,
       cb.by-16,2,2)
  else
   -- draw walking
-  spr(cb.walk_a:s(),
+  spr(cb.digger_ag:nextv(),
       cb.diggerx,cb.by-16,1,2)
  end
  -- debug
