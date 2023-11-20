@@ -98,10 +98,10 @@ function rspr(x,y,rot,mx,my,w,flip,scale)
 end
 
 -- sounds
-s_click=0
-s_select=1
-s_cancel=2
-s_dope1=3
+sfx_click=0
+sfx_select=1
+sfx_cancel=2
+sfx_dope1=3
 -- sprite ids
 sid_empty=16
 sid_invisible=32 -- looks empty, but treated as occupied
@@ -337,7 +337,7 @@ function clear_matches(skip_fx)
     end
    end
   end
-  if (not skip_fx) sfx(s_dope1,0)
+  if (not skip_fx) sfx(sfx_dope1,0)
   b.settling=true
  end
  return mtotal
@@ -452,11 +452,11 @@ function match3_update()
   if not b.selecting
     and not b.settling
     and b.grid[b.cy][b.cx]~=sid_empty then
-   sfx(s_select,0)
+   sfx(sfx_select,0)
    b.selecting=true
   elseif b.selecting then
    b.selecting=false
-   sfx(s_cancel,0)
+   sfx(sfx_cancel,0)
   end
  end
  -- look up rock under cursor
@@ -478,7 +478,7 @@ function match3_update()
  local cx2=b:clampx(b.cx+dx*mdist)
  local cy2=b:clampy(b.cy+dy*mdist)
  if cx2~=b.cx or cy2~=b.cy then
-  local move_snd=s_click
+  local move_snd=sfx_click
   -- swap gems before moving cursor
   if b.selecting then
    b.selecting=false
@@ -489,7 +489,7 @@ function match3_update()
      b.grid[cy2][cx2]=sg
      b.settling=true
     else
-     move_snd=s_cancel
+     move_snd=sfx_cancel
     end
    elseif isrock then -- 2x2 rock
     -- get upper-left block coords
@@ -515,10 +515,10 @@ function match3_update()
      cx2,cy2=b.cx+dx,b.cy+dy -- only move one tile
      b.settling=true
     else
-     move_snd=s_cancel
+     move_snd=sfx_cancel
     end
    elseif fget(b.grid[cy2][cx2],sf_rock) then
-    move_snd=s_cancel
+    move_snd=sfx_cancel
    else
 	   b.grid[b.cy][b.cx]=b.grid[cy2][cx2]
 	   b.grid[cy2][cx2]=sg
@@ -527,7 +527,7 @@ function match3_update()
 	   if clear_matches()==0 then
 	    b.grid[cy2][cx2]=b.grid[b.cy][b.cx]
 	    b.grid[b.cy][b.cx]=sg
-	    move_snd=s_cancel
+	    move_snd=sfx_cancel
 	   end
 	  end
   end
@@ -611,7 +611,7 @@ function menu_update()
  bg_update(mm.scrollx)
  mm.wheel_r=(mm.wheel_r+.1793)%1
  if btnp(🅾️) and mm.scrollx<2 then
-  sfx(s_dope1,0)
+  sfx(sfx_dope1,0)
   mm.scrollx=2
  end
  -- tmp music experiment:
