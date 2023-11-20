@@ -1098,12 +1098,18 @@ function cb_enter(args)
   cary=args.cary,
   wheel_r=args.wheel_r,
   cx=1,
+  cfill=0x5555,
   interactive=false,
   diggerx=-8,
+  diggerf=false,
   digger_ag=animgraph({
    walk={anim(sid_walking,8),"walk"},
-   dig={anim(sid_digging,4),"dig"},
+   idle_e={anim({1,33},8),"idle_e"},
+   pickup={anim({3,35,11,43},4),"idle_f"},
+   idle_f={anim({11,43},8),"idle_f"},
+   drop={anim({11,43,3,35,33},4),"idle_e"},
   },"walk"),
+  carrying=0,
   window_r={30,1,38,1},
   armx=34,
   army=7,
@@ -1142,14 +1148,25 @@ function cb_update()
   local dx=0
   if (btnp(⬅️)) dx-=1
   if (btnp(➡️)) dx+=1
-  cb.cx=clamp(cb.cx+dx,1,cb.w)
+  local cx2=clamp(cb.cx+dx,1,cb.w)
+  if (cx2~=cb.cx) cb.diggerf=cx2<cb.cx
+  cb.cx=cx2
+  if btnp(🅾️) then
+   if cb.carrying==0 then
+    cb.carrying=1
+    cb.digger_ag:to("pickup")
+   else
+    cb.carrying=0
+    cb.digger_ag:to("drop")
+   end
+  end
  else
   -- digger walks in, window rolls down
   cb.window_r[4]=min(7,cb.window_r[4]+0.125)
   cb.diggerx+=0.5
   if cb.diggerx>=cb.bx-8 then
    cb.interactive=true
-   cb.digger_ag:to("dig")
+   cb.digger_ag:to("idle_e")
   end
  end
 end
@@ -1160,10 +1177,10 @@ function cb_draw()
  -- draw board
  map(2,9,cb.bx-8,cb.by,12,7)
  local by=cb.by
- for y=1,cb.h do
+ for row in all(cb.grid) do
   local bx=cb.bx
-  for x=1,cb.w do
-   spr(cb.grid[y][x],bx,by)
+  for s in all(row) do
+   spr(s,bx,by)
    bx+=8
   end
   by+=8
@@ -1193,8 +1210,13 @@ function cb_draw()
      cb.carx+cb.window_r[1],
      cb.cary+cb.window_r[2])
  clip()
- -- draw dolan arm
+ -- draw dirt pile
+ local dsx,dsy=8*(sid_dirt_pile%16),
+               8*(sid_dirt_pile\16)
+ sspr(dsx,dsy,16,16,cb.dirtx,cb.dirty,
+      16,-cb.dirth,false,true)
  if cb.interactive then
+  -- draw dolan arm
   poke(0x5f2d,1) -- mouse
   local ax,ay=cb.carx+cb.armx,
               cb.cary+cb.army
@@ -1205,18 +1227,17 @@ function cb_draw()
        mx,my,8)
   rspr(ax,ay,theta,
        m_armx,m_army,m_armw)
- end
- -- draw dirt pile
- local dsx,dsy=8*(sid_dirt_pile%16),
-               8*(sid_dirt_pile\16)
- sspr(dsx,dsy,16,16,cb.dirtx,cb.dirty,
-      16,-cb.dirth,false,true)
- -- draw digger
- if cb.interactive then
-  spr(b.digger_ag:nextv(),
-      cb.bx-16+8*cb.cx,
-      cb.by-16,2,2)
- else
+  -- draw digger
+  spr(cb.digger_ag:nextv(),
+      cb.bx-(cb.diggerf and 8 or 16)+8*cb.cx,
+      cb.by-16,2,2,cb.diggerf)
+  -- draw cursor
+  local lx,ly=cb.bx+cb.cx*8-8,
+              cb.by
+  fillp(0x5555.8)
+  line(lx,ly,lx+7,ly,7)
+  fillp()
+ else -- not interactive yet
   -- draw walking
   spr(cb.digger_ag:nextv(),
       cb.diggerx,cb.by-16,1,2)
