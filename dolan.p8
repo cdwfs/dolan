@@ -100,6 +100,7 @@ m_wheelx,m_wheely,m_wheelw=2,18,2
 m_armx,m_army,m_armw=5,18,2
 -- sprite flags
 sf_rock=0
+sf_empty=1
 -- constants
 palt_default=0x0040
 
