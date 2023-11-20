@@ -1125,7 +1125,7 @@ function cb_enter(args)
   aimtheta=0,
   muzx=0,
   muzy=0,
-  shoot_fcounts={180,30,30,15,15,15},
+  shoot_fcounts={180,60,60,20,20,20},
   shooti=0,
   shootc=120,
   dirtfalls={},
@@ -1167,7 +1167,8 @@ function cb_update()
   local dx=0
   if (btnp(⬅️)) dx-=1
   if (btnp(➡️)) dx+=1
-  local cx2=clamp(cb.cx+dx,0,cb.w)
+  -- cx may range outside the board!
+  local cx2=clamp(cb.cx+dx,-2,cb.w+2)
   if cx2~=cb.cx then
    cb.diggerf=cx2<cb.cx
    sfx(sfx_click,0)
@@ -1176,13 +1177,14 @@ function cb_update()
   -- handle dirt pickup/drop
   if btnp(🅾️) then
    if not cb.carrying
-      and cb.cx==0 then
+      and cb.cx<=0 then
     -- pick up dirt from dirt pile
     cb.carrying=true
     cb.digger_ag:to("pickup")
     cb.dirth-=1
     sfx(sfx_select,0)
-   elseif cb.carrying and cb.cx>0
+   elseif cb.carrying
+          and cb.cx>=1 and cb.cx<=cb.w
           and cb.grid[1][cb.cx]==sid_empty then
     -- drop dirt
     cb.carrying=false
@@ -1245,7 +1247,7 @@ function cb_update()
    cb.shooti=1+cb.shooti%#cb.shoot_fcounts
    cb.shootc=cb.shoot_fcounts[cb.shooti]
    -- recoil
-   cb.targetx+=6
+   cb.targetx+=12
    -- fire bullet
    add(cb.bullets,{
     px=cb.muzx,
@@ -1382,13 +1384,20 @@ function cb_draw()
   end
   -- draw cursor
   fillp(0x5c5c.8)
-  if cb.cx>0 then
+  if cb.carrying
+     and cb.cx>=1
+     and cb.cx<=cb.w then
+   -- draw cursor on grid column
    local lx,ly=cb.bx+cb.cx*8-8,
                cb.by
    line(lx,ly,lx+7,ly,7)
-  else
+  elseif cb.cx<=0
+         and not cb.carrying then
+   -- highlight dirt pile
    rect(cb.dirtx,cb.dirty,
         cb.dirtx+15,cb.dirty-16,7)
+  else
+   -- no visible cursor
   end
   fillp()
  else -- not interactive yet
