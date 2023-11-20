@@ -239,7 +239,7 @@ function match3_enter()
   digger_ag=animgraph({
    dig={anim(sid_digging,4),"dig"},
   },"dig"),
-  dirtx=0,
+  dirtx=4,
   dirty=72,
   dirth=0,
   clampx=function(this,x)
@@ -568,7 +568,7 @@ function match3_draw()
  end
  -- draw diggin' dude
  spr(b.digger_ag:nextv(),
-     b.bx-16+8*b.cx,56,2,2)
+     b.bx-12+8*b.cx,56,2,2)
  -- draw dirt pile
  local dsx,dsy=8*(sid_dirt_pile%16),
                8*(sid_dirt_pile\16)
@@ -1229,7 +1229,7 @@ function cb_draw()
        m_armx,m_army,m_armw)
   -- draw digger
   spr(cb.digger_ag:nextv(),
-      cb.bx-(cb.diggerf and 8 or 16)+8*cb.cx,
+      cb.bx-(cb.diggerf and 12 or 12)+8*cb.cx,
       cb.by-16,2,2,cb.diggerf)
   -- draw cursor
   local lx,ly=cb.bx+cb.cx*8-8,
