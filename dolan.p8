@@ -112,7 +112,7 @@ end
 
 -- constants
 k_board_w=10
-k_board_h=7
+k_board_h=8
 -- sounds
 sfx_click=0
 sfx_select=1
@@ -225,7 +225,7 @@ b={}
 function match3_enter()
  b={
   mode_timer=0,
-  mode_timer_max=30*60,
+  mode_timer_max=60*60,
   w=k_board_w,
   h=k_board_h,
   bx=-100,
