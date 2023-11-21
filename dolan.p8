@@ -1415,11 +1415,13 @@ function cb_draw()
   rspr(ax,ay,cb.aimtheta,
        m_armx,m_army,m_armw)
   -- draw laser sight
+  fillp(0.5+rnd(0xffff)\1)
   local ldx,ldy=cb.aimx-cb.muzx,
                 cb.aimy-cb.muzy
   line(cb.muzx,cb.muzy,
        cb.muzx+20*ldx,
        cb.muzy+20*ldy,8)
+  fillp()
   -- draw digger
   spr(cb.digger_ag:nextv(),
       cb.bx-12+8*cb.cx,
