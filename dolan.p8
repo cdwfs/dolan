@@ -18,6 +18,17 @@ function sprxy(sid)
  return 8*(sid%16),8*(sid\16)
 end
 
+-- i don't love this easing function,
+-- but it'll work for now
+function easeoutback(x,a,b)
+ local t=clamp((x-a)/(b-a),0,1)
+ local c1=1.70158
+ local c3=c1+1
+ local t1=t-1
+ return 1+c3*t1*t1*t1+c1*t1*t1
+end
+
+
 function collides(collmasks,px,py)
  -- if offscreen, assume
  -- infinite road
@@ -566,8 +577,16 @@ function match3_draw()
  for y=1,b.h do
   local bx=b.bx
   for x=1,b.w do
-   spr(b.grid[y][x],bx,
-       by-b.yoffs[y][x])
+   local s=b.grid[y][x]
+   if b.interactive then
+    spr(s,bx,by-b.yoffs[y][x])
+   else
+    -- fancy more expensive draw
+    local sx,sy=sprxy(b.grid[y][x])
+    local sz=8*easeoutback(b.bx-4*(b.w-x)-4*y,-40,8)
+    sspr(sx,sy,8,8,
+         bx+0.5*(8-sz),by-b.yoffs[y][x]+0.5*(8-sz),sz,sz)
+   end
    bx+=8
   end
   by+=8
