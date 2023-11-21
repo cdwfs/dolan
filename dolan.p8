@@ -14,6 +14,10 @@ function spr_addr(sid)
  return 512*(sid\16)+4*(sid%16)
 end
 
+function sprxy(sid)
+ return 8*(sid%16),8*(sid\16)
+end
+
 function collides(collmasks,px,py)
  -- if offscreen, assume
  -- infinite road
@@ -587,8 +591,7 @@ function match3_draw()
  spr(b.digger_ag:nextv(),
      b.bx-12+8*b.cx,b.by-16,2,2)
  -- draw dirt pile
- local dsx,dsy=8*(sid_dirt_pile%16),
-               8*(sid_dirt_pile\16)
+ local dsx,dsy=sprxy(sid_dirt_pile)
  sspr(dsx,dsy,16,16,b.dirtx,b.by,
       16,-b.dirth/3,false,true)
  -- draw particle gems
@@ -1096,8 +1099,7 @@ function cf_draw()
  spr(sid_running[cf.runner_t],
      cf.runnerx,cf.runnery-5*abs(sin(cf.runner_t/16)),2,2)
  -- draw dirt pile
- local dsx,dsy=8*(sid_dirt_pile%16),
-               8*(sid_dirt_pile\16)
+ local dsx,dsy=sprxy(sid_dirt_pile)
  sspr(dsx,dsy,16,16,cf.dirtx,cf.by,
       16,-cf.dirth/3,false,true)
  -- draw debris particles
@@ -1403,8 +1405,7 @@ function cb_draw()
      cb.cary+cb.window_r[2])
  clip()
  -- draw dirt pile
- local dsx,dsy=8*(sid_dirt_pile%16),
-               8*(sid_dirt_pile\16)
+ local dsx,dsy=sprxy(sid_dirt_pile)
  sspr(dsx,dsy,16,16,cb.dirtx,cb.by,
       16,-cb.dirth/3,false,true)
  if cb.interactive then
