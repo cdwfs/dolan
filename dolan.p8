@@ -921,9 +921,12 @@ function fill_car_cells()
      -- update grid cell
      cf.grid[y][gx]=sid_invisible
      -- set bit in collmasks
-     local row=y+ty0-1 -- 1-based
-     local bit=gx+tx0-2 -- 0-based
-     cf.collmasks[row]|=1<<bit
+     -- no, don't do this; it blocks
+     -- bullets. only placed blocks
+     -- should do that.
+     --local row=y+ty0-1 -- 1-based
+     --local bit=gx+tx0-2 -- 0-based
+     --cf.collmasks[row]|=1<<bit
     end
    end
   else
