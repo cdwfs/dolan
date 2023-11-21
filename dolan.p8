@@ -1174,7 +1174,7 @@ function cb_enter(args)
   shootc=120,
   dirtfalls={},
   bullets={},
-  casings={},
+  particles={},
  }
 end            
 
@@ -1276,13 +1276,15 @@ function cb_update()
     py=cb.muzy,
     vx=2*cos(cb.aimtheta),
     vy=2*-sin(cb.aimtheta),
+    c=7,
    })
    -- eject casing
-   add(cb.casings,{
+   add(cb.particles,{
     px=cb.muzx,
     py=cb.muzy,
     vx=rnd(2)-1,
     vy=-0.1,
+    c=13,
    })
   end
  else -- not interactive yet
@@ -1314,18 +1316,28 @@ function cb_update()
  cb.dirtfalls=dirtfalls2
  -- update bullets
  local bullets2={}
- local plx0,ply0=cb.bx-12+8*cb.bx,
+ local plx0,ply0=cb.bx-(cb.diggerf and 4 or 12)+8*cb.cx,
                  cb.by-16
- local plx1,ply1=plx0+7,ply0+15
+ local plx1,ply1=plx0+6,ply0+15
  for b in all(cb.bullets) do
   b.px+=b.vx
   b.py+=b.vy
+  b.c=16-b.c
   local hit=false
   -- test intersection with player
   if b.px>=plx0 and b.px<=plx1 and
      b.py>=ply0 and b.py<=ply1 then
    -- hit player
    hit=true
+   for i=1,5 do
+    add(cb.particles,{
+     px=b.px,
+     py=b.py,
+     vx=b.vx*rnd(),
+     vy=b.vy*rnd(),
+     c=8,
+    })
+   end
    -- todo: damage
   end
   -- test intersection against
@@ -1339,17 +1351,17 @@ function cb_update()
   end
  end
  cb.bullets=bullets2
- -- update casings
- local casings2={}
- for c in all(cb.casings) do
-  c.vy+=0.1
-  c.px+=c.vx
-  c.py+=c.vy
-  if c.py<128 then
-   add(casings2,c)
+ -- update particles
+ local particles2={}
+ for p in all(cb.particles) do
+  p.vy+=0.1
+  p.px+=p.vx
+  p.py+=p.vy
+  if p.py<128 then
+   add(particles2,p)
   end
  end
- cb.casings=casings2
+ cb.particles=particles2
 end
 
 function cb_draw()
@@ -1418,12 +1430,12 @@ function cb_draw()
   end
   -- draw bullets
   for b in all(cb.bullets) do
-   circfill(b.px,b.py,1,14)
+   circfill(b.px,b.py,1,b.c)
   end
-  -- draw casings
-  for c in all(cb.casings) do
-   pset(c.px,c.py,5)
-   pset(c.px,c.py+1,0)
+  -- draw particles
+  for p in all(cb.particles) do
+   pset(p.px,p.py,p.c)
+   pset(p.px,p.py+1,1)
   end
   -- draw cursor
   fillp(0x5c5c.8)
