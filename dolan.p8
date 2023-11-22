@@ -1177,6 +1177,7 @@ function cb_enter(args)
   cx=0,
   cfill=0x5555,
   interactive=false,
+  health=3,
   diggerx=-8,
   diggerf=true,
   digger_ag=animgraph({
@@ -1360,6 +1361,12 @@ function cb_update()
      b.py>=ply0 and b.py<=ply1 then
    -- hit player
    hit=true
+   cb.health-=1
+   if cb.health<=0 then
+    set_next_mode("gameover",{
+     reason="don't get shot so much!",
+    })
+   end
    for i=1,5 do
     add(cb.particles,{
      px=b.px,
@@ -1369,11 +1376,9 @@ function cb_update()
      c=8,
     })
    end
-   -- todo: damage
   end
   -- test intersection against
   -- falling dirts
-  
   if not hit and
      not collides(cb.collmasks,b.px,b.py) and
      b.px>-8 and b.px<128 and
@@ -1398,6 +1403,9 @@ end
 function cb_draw()
  -- draw bg
  bg_draw()
+ -- draw health
+ print(sub("♥♥♥",1,cb.health),
+  100,4,8)
  -- draw board
  map(2,0,cb.bx-8,cb.by,cb.w+2,cb.h)
  local by=cb.by
