@@ -209,6 +209,11 @@ function _init()
    update=cb_update,
    draw=cb_draw,
   },
+  gameover={
+   enter=go_enter,
+   update=go_update,
+   draw=go_draw,
+  },
  }
  game_mode="menu"
  next_mode=game_mode
@@ -975,24 +980,6 @@ function update_debris()
 end
 
 function cf_update()
- -- debug temp: advance to next
- -- mode
- if btnp(❎) then
-  fill_car_cells()
-  set_next_mode("carbury",{
-   grid=cf.grid,
-   collmasks=cf.collmasks,
-   w=cf.w,
-   h=cf.h,
-   bx=cf.bx,
-   by=cf.by,
-   dirtx=cf.dirtx,
-   dirth=cf.dirth,
-   carx=cf.carx,
-   cary=cf.cary,
-   wheel_r=cf.wheel_r,
-  })
- end
  bg_update()
  update_debris()
  cf.wheel_r=(cf.wheel_r+0.17*cf.carvx)%1
@@ -1036,11 +1023,33 @@ function cf_update()
   carx2+=xfix
   cf.damaged=true
   -- flip velocity
-  -- todo: clamp small vx to zero
-  --       and advance.
   cf.carvx*=-0.5
   if abs(cf.carvx)<0.25 then
+   -- car is at rest.
+   -- clamp to zero
    cf.carvx=0
+   -- if the car isn't deep
+   -- enough in the hole, game over.
+   if cf.cary<cf.by+3 then
+    set_next_mode("gameover",{
+     reason="your pit wasn't deep enough",
+     })
+   else
+    fill_car_cells()
+    set_next_mode("carbury",{
+     grid=cf.grid,
+     collmasks=cf.collmasks,
+     w=cf.w,
+     h=cf.h,
+     bx=cf.bx,
+     by=cf.by,
+     dirtx=cf.dirtx,
+     dirth=cf.dirth,
+     carx=cf.carx,
+     cary=cf.cary,
+     wheel_r=cf.wheel_r,
+    })
+   end
   end
  end
  cf.carx=carx2
@@ -1075,6 +1084,13 @@ function cf_update()
  -- animate runner
  cf.runner_t=1+cf.runner_t%8
  cf.runnerx-=2
+ -- did the car drive right over
+ -- the pit?
+ if cf.carx<-100 then
+  set_next_mode("gameover",{
+   reason="dig a pit to trap the cadillac!",
+  })
+ end
 end
 
 function cf_draw()
@@ -1503,6 +1519,46 @@ function cb_draw()
   end
  end
  --]]
+end
+-->8
+-- gameover/victory
+
+go={}
+function go_enter(args)
+ go={
+  reason=args.reason,
+  fade_step=0,
+  dfade=0.25,
+  t=0,
+  can_advance=false,
+ }
+end
+
+function go_update()
+ go.fade_step=clamp(go.fade_step+go.dfade,0,fade_max_step)
+ if go.fade_step==1 then
+  go.can_advance=true
+ end
+ if go.can_advance then
+  if go.dfade>0 and btnp(🅾️) then
+   go.dfade=-1*abs(go.dfade)
+  elseif go.fade_step==0 then
+   set_next_mode("menu")
+  end
+ end
+end
+
+function go_draw()
+ function cprint(msg,y,c)
+  print(msg,64-2*#msg,y,c)
+ end
+ cls(0)
+ fade(go.fade_step)
+ cprint("game over",56,8)
+ cprint(go.reason,64,7)
+ if go.can_advance then
+  cprint("press 🅾️ to try again",96,7)
+ end
 end
 __gfx__
 00000000955299999999999999999999999999999999999944442444999999999999999999939999999339999999999999999999955299999559999900000000
