@@ -143,12 +143,11 @@ sid_rock2a=7
 sid_rock2b=8
 sid_rock2c=23
 sid_rock2d=24
-sid_car=129
 sid_cloud1=65
 sid_cloud2=67
 sid_cloud3=68
-sid_car_bumper1={145,146,161,162}
-sid_car_bumper2={141,142,157,158}
+sid_car=129
+sid_car_bumper2=141
 sid_car_debris={170,171,172,186,187,188}
 sid_digging={1,33,3,35,11,43,13,45}
 sid_running={103,71,71,71,71,71,71,103}
@@ -884,6 +883,7 @@ function cf_enter(args)
   cary=args.by-27, -- slightly above road
   carvx=-2,
   carvy=0,
+  damaged=false,
   wheel_r=0,
   gravity=0.1,
   -- collision test points on
@@ -1034,19 +1034,7 @@ function cf_update()
  end
  if xfix~=0 then
   carx2+=xfix
-  -- overwrite bumper sprites
-  -- with damaged versions
-  -- (only needs to happen on
-  -- the first hit, but enh)
-  for i,s in pairs(sid_car_bumper2) do
-   local src,dst=spr_addr(s),
-                 spr_addr(sid_car_bumper1[i])
-   for y=0,7 do
-    memcpy(dst,src,4)
-    src+=16*4
-    dst+=16*4
-   end
-  end
+  cf.damaged=true
   -- flip velocity
   -- todo: clamp small vx to zero
   --       and advance.
@@ -1112,8 +1100,14 @@ function cf_draw()
       cf.cary+21,cf.wheel_r+0.17,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
- spr(sid_car,cf.carx,
-     cf.cary,8,3)
+ if cf.damaged then
+  spr(sid_car_bumper2,
+   cf.carx,cf.cary+8,2,2)
+  spr(sid_car+2,
+   cf.carx+16,cf.cary,6,3)
+ else
+  spr(sid_car,cf.carx,cf.cary,8,3)
+ end
  -- draw running digger
  spr(sid_running[cf.runner_t],
      cf.runnerx,cf.runnery-5*abs(sin(cf.runner_t/16)),2,2)
@@ -1408,8 +1402,10 @@ function cb_draw()
       cb.cary+21,cb.wheel_r+0.17,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
- spr(sid_car,cb.carx,
-     cb.cary,8,3)
+ spr(sid_car_bumper2,
+   cb.carx,cb.cary+8,2,2)
+ spr(sid_car+2,
+   cb.carx+16,cb.cary,6,3)
  -- draw car window and dolan
  clip(cb.carx+cb.window_r[1],
       cb.cary+cb.window_r[2],
