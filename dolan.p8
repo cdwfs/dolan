@@ -1033,13 +1033,18 @@ function cf_update()
    -- car is at rest.
    -- clamp to zero
    cf.carvx=0
-   -- if the car isn't deep
-   -- enough in the hole, game over.
-   if cf.cary<cf.by+3 then
-    set_next_mode("gameover",{
-     reason="your pit wasn't deep enough",
-     })
-   else
+   -- see if the car is deep
+   -- enough to bury. if not,
+   -- game over. otherwise
+   -- advance to burying.
+   local toprowclear=true
+   for x=1,cf.w do
+    if cf.grid[1][x]~=sid_empty then
+     deepenough=false
+     break
+    end
+   end
+   if toprowclear and cf.cary>cf.by+6 then
     fill_car_cells()
     set_next_mode("carbury",{
      grid=cf.grid,
@@ -1054,6 +1059,10 @@ function cf_update()
      cary=cf.cary,
      wheel_r=cf.wheel_r,
     })
+   else
+    set_next_mode("gameover",{
+     reason="your pit wasn't deep enough",
+     })
    end
   end
  end
