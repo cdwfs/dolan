@@ -198,33 +198,27 @@ function _init()
  modes={
   menu={
    enter=menu_enter,
-   update=menu_update,
-   draw=menu_draw,
+   obj=mm,
   },
   match3={
    enter=match3_enter,
-   update=match3_update,
-   draw=match3_draw,
+   obj=nil,
   },
   carfall={
    enter=cf_enter,
-   update=cf_update,
-   draw=cf_draw,
+   obj=nil,
   },
   carbury={
    enter=cb_enter,
-   update=cb_update,
-   draw=cb_draw,
+   obj=nil,
   },
   gameover={
    enter=go_enter,
-   update=go_update,
-   draw=go_draw,
+   obj=nil,
   },
   victory={
    enter=vt_enter,
-   update=vt_update,
-   draw=vt_draw,
+   obj=nil,
   },
  }
  game_mode="menu"
@@ -234,27 +228,33 @@ function _init()
  palt(palt_default) -- orange transparent by default
  cls(0)
  bg_init()
- modes[game_mode].enter()
+ modes[game_mode].obj=
+  modes[game_mode].enter()
 end
 
 function _update60()
- modes[game_mode].update()
+ modes[game_mode].obj:update()
 end
 
 function _draw()
- modes[game_mode].draw()
+ modes[game_mode].obj:draw()
  --print(game_mode,1,1,0)
  if next_mode~=game_mode then
   game_mode=next_mode
-  modes[game_mode].enter(next_mode_enter_args)
+  modes[game_mode].obj=
+   modes[game_mode].enter(next_mode_enter_args)
  end
 end
 -->8
 -- match3 mode
-b={}
+m3={}
 
 function match3_enter()
- b={
+ m3=obj({
+  update=match3_update,
+  draw=match3_draw,
+  clear_matches=clear_matches,
+  settle_grid=settle_grid,
   mode_timer=0,
   mode_timer_max=60*60,
   w=k_board_w,
@@ -297,161 +297,188 @@ function match3_enter()
   clampy=function(this,y)
    return max(1,min(this.h,y))
   end,
-  cursor_fill=function(_ENV)
-   crs_t = selecting
-           and 1+crs_t%4 or 1
-   return crs_fills[crs_t]
-  end,
- }
+ })
  -- populate grid
- for y=1,b.h do
+ for y=1,m3.h do
   local row,yoffs={},{}
-  for x=1,b.w do
+  for x=1,m3.w do
    add(row,rnd(sid_gems))
    add(yoffs,0)
   end
-  add(b.grid,row)
-  add(b.yoffs,yoffs)
+  add(m3.grid,row)
+  add(m3.yoffs,yoffs)
  end
  -- iterate until no matches
- while clear_matches(true)>0 do
-  b.settling=false
-  b.dirth=0
-  for y=1,b.h do
-   for x=1,b.w do
-    b.yoffs[y][x]=0
-    if b.grid[y][x]==sid_empty then
-     b.grid[y][x]=rnd(sid_gems)
+ while m3:clear_matches(true)>0 do
+  m3.settling=false
+  m3.dirth=0
+  for y=1,m3.h do
+   for x=1,m3.w do
+    m3.yoffs[y][x]=0
+    if m3.grid[y][x]==sid_empty then
+     m3.grid[y][x]=rnd(sid_gems)
     end
    end
   end
  end
  -- todo: place rocks
- b.grid[1][3]=sid_rock1
- b.grid[1][6]=sid_rock2a
- b.grid[1][7]=sid_rock2b
- b.grid[2][6]=sid_rock2c
- b.grid[2][7]=sid_rock2d
+ m3.grid[1][3]=sid_rock1
+ m3.grid[1][6]=sid_rock2a
+ m3.grid[1][7]=sid_rock2b
+ m3.grid[2][6]=sid_rock2c
+ m3.grid[2][7]=sid_rock2d
+ return m3
 end
 
 -- returns the number of matches
-function clear_matches(skip_fx)
+function clear_matches(_ENV,skip_fx)
  local mtotal=0
- for y=1,b.h do
-  local row=b.grid[y]
-  for x=1,b.w do
+ for y=1,h do
+  local row=grid[y]
+  for x=1,w do
    local s=row[x]
    if s==sid_empty then goto match_end end
    local n=1 -- find x match
-   for mx=x+1,b.w do
+   for mx=x+1,w do
     if (row[mx]~=s) break
     n+=1
    end
    if n>=3 then -- x matched
     mtotal+=1
     for mx=x,x+n-1 do
-     b.yoffs[y][mx]=-1
+     yoffs[y][mx]=-1
     end
    end
    n=1 -- find y match
-   for my=y+1,b.h do
-    if (b.grid[my][x]~=s) break
+   for my=y+1,h do
+    if (grid[my][x]~=s) break
     n+=1
    end
    if n>=3 then -- y matched
     mtotal+=1
     for my=y,y+n-1 do
-     b.yoffs[my][x]=-1
+     yoffs[my][x]=-1
     end
    end
    ::match_end::
    end
  end
- b.dirth+=3*mtotal
+ dirth+=3*mtotal
  if mtotal>0 then
-  for y=1,b.h do
-   for x=1,b.w do
-    if b.yoffs[y][x]==-1 then
+  for y=1,h do
+   for x=1,w do
+    if yoffs[y][x]==-1 then
      if not skip_fx then
-      add(b.pgems,{
-       s=b.grid[y][x],
-       px=b.bx+8*x,
-       py=b.by+8*y,
+      add(pgems,{
+       s=grid[y][x],
+       px=bx+8*x,
+       py=by+8*y,
        vx=-3+rnd(2),
        vy=-10+rnd(4),
       })
      end
-     b.grid[y][x]=sid_empty
-     b.yoffs[y][x]=0
+     grid[y][x]=sid_empty
+     yoffs[y][x]=0
     end
    end
   end
   if (not skip_fx) sfx(sfx_dope1,0)
-  b.settling=true
+  settling=true
  end
  return mtotal
 end
 
-function settle_grid()
- if b.settling then
+function settle_grid(_ENV)
+ if settling then
   local scount=0
-  for y=1,b.h do
-   for x=1,b.w do
+  for y=1,h do
+   for x=1,w do
     -- if not empty and not moving,
     -- see if we should fall.
     -- todo: handle 2x2 rocks.
     -- they should only fall if
     -- both halves are above
     -- empty cells.
-    local g=b.grid[y][x]
+    local g=grid[y][x]
     if g==sid_rock2a and
-       b.yoffs[y][x]==0 then
-     if y+1<b.h and
-        b.grid[y+2][x]==sid_empty and
-        b.grid[y+2][x+1]==sid_empty then
-      b.grid[y+1][x]=sid_rock2a
-      b.grid[y+1][x+1]=sid_rock2b
-      b.grid[y+2][x]=sid_rock2c
-      b.grid[y+2][x+1]=sid_rock2d
-      b.grid[y][x]=sid_empty
-      b.grid[y][x+1]=sid_empty
-      b.yoffs[y+1][x]=7
-      b.yoffs[y+1][x+1]=7
-      b.yoffs[y+2][x]=7
-      b.yoffs[y+2][x+1]=7
+       yoffs[y][x]==0 then
+     if y+1<h and
+        grid[y+2][x]==sid_empty and
+        grid[y+2][x+1]==sid_empty then
+      grid[y+1][x]=sid_rock2a
+      grid[y+1][x+1]=sid_rock2b
+      grid[y+2][x]=sid_rock2c
+      grid[y+2][x+1]=sid_rock2d
+      grid[y][x]=sid_empty
+      grid[y][x+1]=sid_empty
+      yoffs[y+1][x]=7
+      yoffs[y+1][x+1]=7
+      yoffs[y+2][x]=7
+      yoffs[y+2][x+1]=7
       scount+=1
      end
     elseif g~=sid_empty and
            g~=sid_rock2b and
            g~=sid_rock2c and
            g~=sid_rock2d and
-           b.yoffs[y][x]==0 then
-     if y<b.h and
-        b.grid[y+1][x]==sid_empty then
-      b.grid[y+1][x]=g
-      b.grid[y][x]=sid_empty
-      b.yoffs[y+1][x]=7
+           yoffs[y][x]==0 then
+     if y<h and
+        grid[y+1][x]==sid_empty then
+      grid[y+1][x]=g
+      grid[y][x]=sid_empty
+      yoffs[y+1][x]=7
       scount+=1
      end
     -- if already falling, keep
     -- falling.
-    elseif b.yoffs[y][x]>0 then
-     b.yoffs[y][x]-=1
+    elseif yoffs[y][x]>0 then
+     yoffs[y][x]-=1
      scount+=1
     end
    end
   end
   if scount==0 then
-   b.settling=false
-   clear_matches()
+   settling=false
+   m3:clear_matches()
   end
  end
 end
 
-function update_pgems()
- local ing=b.pgems
+function match3_update(_ENV)
+ -- debug temp
+ if btnp(❎) then
+  mode_timer=mode_timer_max
+ end
+ -- update timer/sun
+ mode_timer+=1
+ if mode_timer>=mode_timer_max then
+  set_next_mode("carfall",{
+   grid=grid,
+   w=w,
+   h=h,
+   bx=bx,
+   by=by,
+   runnerx=bx-16+8*cx,
+   dirtx=dirtx,
+   dirth=dirth,
+  })
+ end
+ local mode_t=mode_timer/mode_timer_max
+ sunx=-20+148*(mode_t)
+ suny=16+8*cos(mode_t)
+ -- scroll
+ if bx<24 then
+  bx=min(24,bx+scrollx)
+ else
+  interactive=true
+  scrollx=0
+ end
+ bg:update(scrollx)
+ if (not interactive) return
+ m3:settle_grid()
+ -- update gem particles
  local outg={}
- for g in all(ing) do
+ for g in all(pgems) do
   g.px+=g.vx
   g.py+=g.vy
   g.vy+=1
@@ -459,59 +486,24 @@ function update_pgems()
    add(outg,g)
   end
  end
- b.pgems=outg
-end
-
-function match3_update()
- -- debug temp
- if btnp(❎) then
-  b.mode_timer=b.mode_timer_max
- end
- -- update timer/sun
- b.mode_timer+=1
- if b.mode_timer>=b.mode_timer_max then
-  set_next_mode("carfall",{
-   grid=b.grid,
-   w=b.w,
-   h=b.h,
-   bx=b.bx,
-   by=b.by,
-   runnerx=b.bx-16+8*b.cx,
-   dirtx=b.dirtx,
-   dirth=b.dirth,
-  })
- end
- local mode_t=b.mode_timer/b.mode_timer_max
- bg.sunx=-20+148*(mode_t)
- bg.suny=16+8*cos(mode_t)
- -- scroll
- if b.bx<24 then
-  b.bx=min(24,b.bx+b.scrollx)
- else
-  b.interactive=true
-  b.scrollx=0
- end
- bg:update(scrollx)
- if (not b.interactive) return
- settle_grid()
- update_pgems()
+ pgems=outg
  -- select or cancel selection
  if btnp(🅾️) then
-  if not b.selecting
-    and not b.settling
-    and b.grid[b.cy][b.cx]~=sid_empty then
+  if not selecting
+    and not settling
+    and grid[cy][cx]~=sid_empty then
    sfx(sfx_select,0)
-   b.selecting=true
-  elseif b.selecting then
-   b.selecting=false
+   selecting=true
+  elseif selecting then
+   selecting=false
    sfx(sfx_cancel,0)
   end
  end
  -- look up rock under cursor
  -- (default to rock1)
- local sg=b.grid[b.cy][b.cx]
+ local sg=grid[cy][cx]
  local isrock=fget(sg,sf_rock)
- local r=b.rock_mdists[
+ local r=rock_mdists[
          isrock and sg
                  or sid_rock1]
  -- move cursor
@@ -523,114 +515,117 @@ function match3_update()
  if (dx~=0) dy=0 -- no diagonals!
  local mi=2*dx+dy+3
  local mdist=mi~=0 and r[mi]
- local cx2=b:clampx(b.cx+dx*mdist)
- local cy2=b:clampy(b.cy+dy*mdist)
- if cx2~=b.cx or cy2~=b.cy then
+ local cx2=m3:clampx(cx+dx*mdist)
+ local cy2=m3:clampy(cy+dy*mdist)
+ if cx2~=cx or cy2~=cy then
   local move_snd=sfx_click
   -- swap gems before moving cursor
-  if b.selecting then
-   b.selecting=false
+  if selecting then
+   selecting=false
    if sg==sid_rock1 then
     -- only swap if dest cell is empty
-    if b.grid[cy2][cx2]==sid_empty then
-     b.grid[b.cy][b.cx]=sid_empty
-     b.grid[cy2][cx2]=sg
-     b.settling=true
+    if grid[cy2][cx2]==sid_empty then
+     grid[cy][cx]=sid_empty
+     grid[cy2][cx2]=sg
+     settling=true
     else
      move_snd=sfx_cancel
     end
    elseif isrock then -- 2x2 rock
     -- get upper-left block coords
-    local bx,by=b.cx+r[6],b.cy+r[7]
+    local bx,by=cx+r[6],cy+r[7]
     -- get coords for cells to check for empty
     local ex,ey=bx+dx+(dx>0 and 1 or 0),
                 by+dy+(dy>0 and 1 or 0)
     local ex2,ey2=ex+abs(dy),
                   ey+abs(dx)
     -- only swap if both dest cells are empty
-    if b.grid[ey][ex]==sid_empty and
-       b.grid[ey2][ex2]==sid_empty then
-     b.grid[by][bx]=sid_empty
-     b.grid[by][bx+1]=sid_empty
-     b.grid[by+1][bx]=sid_empty
-     b.grid[by+1][bx+1]=sid_empty
+    if grid[ey][ex]==sid_empty and
+       grid[ey2][ex2]==sid_empty then
+     grid[by][bx]=sid_empty
+     grid[by][bx+1]=sid_empty
+     grid[by+1][bx]=sid_empty
+     grid[by+1][bx+1]=sid_empty
      bx+=dx
      by+=dy
-     b.grid[by][bx]=sid_rock2a
-     b.grid[by][bx+1]=sid_rock2b
-     b.grid[by+1][bx]=sid_rock2c
-     b.grid[by+1][bx+1]=sid_rock2d
-     cx2,cy2=b.cx+dx,b.cy+dy -- only move one tile
-     b.settling=true
+     grid[by][bx]=sid_rock2a
+     grid[by][bx+1]=sid_rock2b
+     grid[by+1][bx]=sid_rock2c
+     grid[by+1][bx+1]=sid_rock2d
+     cx2,cy2=cx+dx,cy+dy -- only move one tile
+     settling=true
     else
      move_snd=sfx_cancel
     end
-   elseif fget(b.grid[cy2][cx2],sf_rock) then
+   elseif fget(grid[cy2][cx2],sf_rock) then
     move_snd=sfx_cancel
    else
-	   b.grid[b.cy][b.cx]=b.grid[cy2][cx2]
-	   b.grid[cy2][cx2]=sg
+	   grid[cy][cx]=grid[cy2][cx2]
+	   grid[cy2][cx2]=sg
 	   move_snd=nil
 	   -- revert if not a match
-	   if clear_matches()==0 then
-	    b.grid[cy2][cx2]=b.grid[b.cy][b.cx]
-	    b.grid[b.cy][b.cx]=sg
+	   if m3:clear_matches()==0 then
+	    grid[cy2][cx2]=grid[cy][cx]
+	    grid[cy][cx]=sg
 	    move_snd=sfx_cancel
 	   end
 	  end
   end
-  b.cx,b.cy=cx2,cy2
+  cx,cy=cx2,cy2
   if (move_snd) sfx(move_snd,0)
  end
 end
 
-function match3_draw()
+function match3_draw(_ENV)
  -- draw bg
  bg:draw()
  -- draw board
- map(2,0,b.bx-8,b.by,b.w+2,b.h)
- local by=b.by
- for y=1,b.h do
-  local bx=b.bx
-  for x=1,b.w do
-   local s=b.grid[y][x]
-   if b.interactive then
-    spr(s,bx,by-b.yoffs[y][x])
+ map(2,0,bx-8,by,w+2,h)
+ local gby=by
+ for y=1,h do
+  local gbx=bx
+  for x=1,w do
+   local s=grid[y][x]
+   if interactive then
+    spr(s,gbx,gby-yoffs[y][x])
    else
     -- fancy more expensive draw
-    local sx,sy=sprxy(b.grid[y][x])
-    local sz=8*easeoutback(b.bx-4*(b.w-x)-4*y,-40,8)
+    local sx,sy=sprxy(grid[y][x])
+    local sz=8*easeoutback(gbx-4*(w-x)-4*y,-40,8)
     sspr(sx,sy,8,8,
-         bx+0.5*(8-sz),by-b.yoffs[y][x]+0.5*(8-sz),sz,sz)
+         gbx+0.5*(8-sz),gby-yoffs[y][x]+0.5*(8-sz),sz,sz)
    end
-   bx+=8
+   gbx+=8
   end
-  by+=8
+  gby+=8
  end
  -- draw cursor
- if b.interactive then
+ if interactive then
   poke(0x5f34,1) -- color.fill mode
-  local sg=b.grid[b.cy][b.cx]
+  local sg=grid[cy][cx]
   local isrock=fget(sg,sf_rock)
-  local r=b.rock_mdists[
+  local r=rock_mdists[
           isrock and sg
                   or sid_rock1]
-  local cx,cy=b.bx+8*(b.cx+r[6])-8,
-              b.by+8*(b.cy+r[7])-8
-  rect(cx,cy, cx+r[8],cy+r[8],
-       b:cursor_fill())
+  local crx,cry=bx+8*(cx+r[6])-8,
+                by+8*(cy+r[7])-8
+  
+  crs_t = selecting
+          and 1+crs_t%4 or 1
+  rect(crx,cry,crx+r[8],cry+r[8],
+       crs_fills[crs_t])
   poke(0x5f34,0)
   fillp()
  end
  -- draw diggin' dude
- spr(b.digger_ag:nextv(),
-     b.bx-12+8*b.cx,b.by-16,2,2)
+ spr(digger_ag:nextv(),
+     bx-12+8*cx,by-16,2,2)
  -- draw dirt pile
  local dsx,dsy=sprxy(sid_dirt_pile)
- sspr(dsx,dsy,16,16,b.dirtx,b.by,
-      16,-b.dirth/3,false,true)
+ sspr(dsx,dsy,16,16,dirtx,by,
+      16,-dirth/3,false,true)
  -- draw particle gems
- for g in all(b.pgems) do
+ for g in all(pgems) do
   spr(g.s,g.px,g.py)
  end
  -- debug
@@ -642,7 +637,9 @@ mm={}
 
 function menu_enter()
  cls(0)
- mm={
+ mm=obj({
+  update=menu_update,
+  draw=menu_draw,
   scrollx=1,
   titlex=32,
   titley=12,
@@ -650,24 +647,26 @@ function menu_enter()
   cary=8*(16-k_board_h)-25,
   wheel_r=0,
   fade_step=0,
- }
+ })
  --music(0,2000)
+ return mm
 end
 
-function menu_update()
- mm.carx+=mm.scrollx-1
- mm.titlex+=mm.scrollx-1
- mm.fade_step=min(fade_max_step,mm.fade_step+1)
- fade(mm.fade_step)
- if mm.carx>128 then
+function menu_update(_ENV)
+ carx+=scrollx-1
+ titlex+=scrollx-1
+ fade_step=min(fade_max_step,
+               fade_step+1)
+ fade(fade_step)
+ if carx>128 then
   set_next_mode("match3")
   fade()
  end
  bg:update(scrollx)
- mm.wheel_r=(mm.wheel_r+.1793)%1
- if btnp(🅾️) and mm.scrollx<2 then
+ wheel_r=(wheel_r+.1793)%1
+ if btnp(🅾️) and scrollx<2 then
   sfx(sfx_dope1,0)
-  mm.scrollx=2
+  scrollx=2
  end
  -- tmp music experiment:
  -- remove loop end from current
@@ -677,7 +676,7 @@ function menu_update()
  end
 end
 
-function menu_draw()
+function menu_draw(_ENV)
  -- background
  bg:draw()
  -- car
@@ -685,32 +684,32 @@ function menu_draw()
  -- add a bit of random wheel bumpiness
  local w1y,w2y=rnd()<0.01 and 1 or 0,
                rnd()<0.01 and 1 or 0
- rspr(mm.carx+11+cardx,
-      mm.cary+21-w1y,mm.wheel_r,
+ rspr(carx+11+cardx,
+      cary+21-w1y,wheel_r,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
- rspr(mm.carx+47+cardx,
-      mm.cary+21-w2y,mm.wheel_r+0.17,
+ rspr(carx+47+cardx,
+      cary+21-w2y,wheel_r+0.17,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
- spr(sid_car,mm.carx+cardx,
-     mm.cary,8,3)
+ spr(sid_car,carx+cardx,
+     cary,8,3)
  -- title
  --?"\^w\^t\f1\^j93dolan's\^j96\+cfcadillac\^j93\+ff\f9dolan's\^j96\+becadillac"
  print("\^w\^tdolan's",
-       mm.titlex+1+4,
-       mm.titley+1,1)
+       titlex+1+4,
+       titley+1,1)
  print("\^w\^tdolan's",
-       mm.titlex+4,
-       mm.titley,9)
+       titlex+4,
+       titley,9)
  print("\^w\^tcadillac",
-       mm.titlex+1,
-       mm.titley+12+1,1)
+       titlex+1,
+       titley+12+1,1)
  print("\^w\^tcadillac",
-       mm.titlex,
-       mm.titley+12,9)
+       titlex,
+       titley+12,9)
  -- menu
- if mm.scrollx<2 then
+ if scrollx<2 then
   print("press 🅾️ to start",30,96,0)
   print("press 🅾️ to start",29,95,7)
  end
