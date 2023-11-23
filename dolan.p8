@@ -1215,8 +1215,10 @@ function cb_enter(args)
   muzx=0,
   muzy=0,
   shoot_fcounts={180,60,60,20,20,20},
-  shooti=0,
-  shootc=120,
+  shooti=6,
+  shootc=0,
+  reload_time=120,
+  reloadc=0,
   dirtfalls={},
   bullets={},
   particles={},
@@ -1318,11 +1320,16 @@ function cb_update()
                   ay-7*sin(cb.aimtheta+.03)
   -- dolan shooting
   cb.shootc-=1
+  cb.reloadc-=1
   if cb.shootc<=0 then
    sfx(sfx_shoot,0,rnd(5)\1)
    -- reset shot timer
    cb.shooti=1+cb.shooti%#cb.shoot_fcounts
    cb.shootc=cb.shoot_fcounts[cb.shooti]
+   -- reload?
+   if cb.shooti==1 then
+    cb.reloadc=cb.reload_time
+   end
    -- recoil
    cb.targetx+=12
    -- fire bullet
@@ -1341,6 +1348,11 @@ function cb_update()
     vy=-0.1,
     c=13,
    })
+  end
+  -- when reload ends, reset target
+  -- so he has to aim again
+  if cb.reloadc==0 then
+   cb.targetx,cb.targety=0,cb.cary+8
   end
  else -- not interactive yet
   -- digger walks in, window rolls down
@@ -1472,19 +1484,21 @@ function cb_draw()
  sspr(dsx,dsy,16,16,cb.dirtx,cb.by,
       16,-cb.dirth/3,false,true)
  if cb.interactive then
-  -- draw dolan arm
-  local ax,ay=cb.carx+cb.armx,
-              cb.cary+cb.army
-  rspr(ax,ay,cb.aimtheta,
-       m_armx,m_army,m_armw)
-  -- draw laser sight
-  fillp(0.5+rnd(0xffff)\1)
-  local ldx,ldy=cb.aimx-cb.muzx,
-                cb.aimy-cb.muzy
-  line(cb.muzx,cb.muzy,
-       cb.muzx+20*ldx,
-       cb.muzy+20*ldy,8)
-  fillp()
+  if cb.reloadc<=0 then
+   -- draw dolan arm
+   local ax,ay=cb.carx+cb.armx,
+               cb.cary+cb.army
+   rspr(ax,ay,cb.aimtheta,
+        m_armx,m_army,m_armw)
+   -- draw laser sight
+   fillp(0.5+rnd(0xffff)\1)
+   local ldx,ldy=cb.aimx-cb.muzx,
+                 cb.aimy-cb.muzy
+   line(cb.muzx,cb.muzy,
+        cb.muzx+20*ldx,
+        cb.muzy+20*ldy,8)
+   fillp()
+  end
   -- draw digger
   spr(cb.digger_ag:nextv(),
       cb.bx-12+8*cb.cx,
