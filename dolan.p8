@@ -491,7 +491,7 @@ function match3_update()
   b.interactive=true
   b.scrollx=0
  end
- bg_update(b.scrollx)
+ bg:update(scrollx)
  if (not b.interactive) return
  settle_grid()
  update_pgems()
@@ -586,7 +586,7 @@ end
 
 function match3_draw()
  -- draw bg
- bg_draw()
+ bg:draw()
  -- draw board
  map(2,0,b.bx-8,b.by,b.w+2,b.h)
  local by=b.by
@@ -663,7 +663,7 @@ function menu_update()
   set_next_mode("match3")
   fade()
  end
- bg_update(mm.scrollx)
+ bg:update(scrollx)
  mm.wheel_r=(mm.wheel_r+.1793)%1
  if btnp(🅾️) and mm.scrollx<2 then
   sfx(sfx_dope1,0)
@@ -679,7 +679,7 @@ end
 
 function menu_draw()
  -- background
- bg_draw()
+ bg:draw()
  -- car
  local cardx=2
  -- add a bit of random wheel bumpiness
@@ -810,7 +810,9 @@ end
 bg={}
 
 function bg_init()
- bg={
+ bg=obj({
+  update=bg_update,
+  draw=bg_draw,
   roadx1=0,
   roadx2=-128,
   cactx1=0,
@@ -818,66 +820,64 @@ function bg_init()
   clouds={},
   sunx=-16,
   suny=0,
- }
+ })
  for i=1,16 do
-  add_cloud(16*i-128)
+  local x=16*i-128
+  local bx,by=x+rnd(5)\1,rnd(48)\1
+  local vx=0.03+rnd(0.002)
+  for i=1,2+rnd(4)\1 do
+   add(bg.clouds,{
+    x=bx+rnd(3)\1,
+    y=by+rnd(3)\1,
+    w=10+rnd(5),
+    h=2+rnd(4),
+    vx=0.02,
+    col=i<2 and 6 or 7,
+   })
+  end
  end
 end
 
-function bg_update(dx)
+function bg_update(_ENV,dx)
  dx=dx or 0
  -- update clouds
- for c in all(bg.clouds) do
-  c.x+=c.vx+0.25*dx
-  if (c.x>=128) c.x-=256
+ for c in all(clouds) do
+  local _ENV=c
+  x+=vx+0.25*dx
+  if (x>=128) x-=256
  end
  -- update cacti
- bg.cactx1+=0.5*dx
- if (bg.cactx1>=128) bg.cactx1-=256
- bg.cactx2+=0.5*dx
- if (bg.cactx2>=128) bg.cactx2-=256
+ cactx1+=0.5*dx
+ if (cactx1>=128) cactx1-=256
+ cactx2+=0.5*dx
+ if (cactx2>=128) cactx2-=256
  -- update road
- bg.roadx1+=1*dx
- if (bg.roadx1>=128) bg.roadx1-=256
- bg.roadx2+=1*dx
- if (bg.roadx2>=128) bg.roadx2-=256
+ roadx1+=1*dx
+ if (roadx1>=128) roadx1-=256
+ roadx2+=1*dx
+ if (roadx2>=128) roadx2-=256
 end
 
-function bg_draw()
+function bg_draw(_ENV)
  local h=k_board_h
  -- sky
  rectfill(0,0,127,8*(16-h),12)
  -- sun
  palt(0x0010)
- spr(sid_sun,bg.sunx,bg.suny,2,2)
+ spr(sid_sun,sunx,suny,2,2)
  palt(palt_default)
  -- clouds
- for c in all(bg.clouds) do
+ for c in all(clouds) do
   ovalfill(c.x,c.y,c.x+c.w,c.y+c.h,c.col)
  end
  -- cacti
- map(16,0,bg.cactx1,8*(14-h),16,2)
- map(16,0,bg.cactx2,8*(14-h),16,2)
+ map(16,0,cactx1,8*(14-h),16,2)
+ map(16,0,cactx2,8*(14-h),16,2)
  -- road
- map(16,2,bg.roadx1,8*(16-h),16,1)
- map(16,2,bg.roadx2,8*(16-h),16,1)
+ map(16,2,roadx1,8*(16-h),16,1)
+ map(16,2,roadx2,8*(16-h),16,1)
  -- dirt
  rectfill(0,8*(16-h)+4,127,127,5)
-end
-
-function add_cloud(x)
- local bx,by=x+rnd(5)\1,rnd(48)\1
- local vx=0.03+rnd(0.002)
- for i=1,2+rnd(4)\1 do
-  add(bg.clouds,{
-   x=bx+rnd(3)\1,
-   y=by+rnd(3)\1,
-   w=10+rnd(5),
-   h=2+rnd(4),
-   vx=0.02,
-   col=i<2 and 6 or 7,
-  })
- end
 end
 -->8
 -- car-falling
@@ -992,7 +992,7 @@ function update_debris()
 end
 
 function cf_update()
- bg_update()
+ bg:update()
  update_debris()
  cf.wheel_r=(cf.wheel_r+0.17*cf.carvx)%1
  -- fall + collision checks
@@ -1116,7 +1116,7 @@ end
 
 function cf_draw()
  -- draw bg
- bg_draw()
+ bg:draw()
  -- draw board
  map(2,0,cf.bx-8,cf.by,cf.w+2,cf.h)
  local by=cf.by
@@ -1236,7 +1236,7 @@ function cb_enter(args)
 end            
 
 function cb_update()
- bg_update(-cb.dpanx)
+ bg:update(-cb.dpanx)
  if cb.phase==0 then
   -- intro cutscene, not interactive yet
   -- digger walks in, window rolls down
@@ -1473,7 +1473,7 @@ end
 function cb_draw()
  -- draw bg
  camera()
- bg_draw()
+ bg:draw()
  camera(cb.panx,0)
  -- draw board
  map(2,0,cb.bx-8,cb.by,cb.w+2,cb.h)
