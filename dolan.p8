@@ -883,7 +883,9 @@ end
 cf={}
 
 function cf_enter(args)
- cf={
+ cf=obj({
+  update=cf_update,
+  draw=cf_draw,
   bx=args.bx,
   by=args.by,
   w=args.w,
@@ -915,7 +917,7 @@ function cf_enter(args)
    {58,22},{57, 8},{57,13},{58,19},
   },
   debris={},
- }
+ })
  -- construct 16x16 bitmask for
  -- entire screen for collision
  -- testing
@@ -935,9 +937,10 @@ function cf_enter(args)
   end
   cf.collmasks[row]=mask
  end
+ return cf
 end
 
-function fill_car_cells()
+function fill_car_cells(_ENV)
  -- determine which grid cells
  -- are occupied by the car.
  local hull_pts={
@@ -947,18 +950,18 @@ function fill_car_cells()
   -- in a cell doesn't mark it as full
   {3,11},{10,10},{18,5},{22,2},{30,2},{38,2},{46,2},{52,2},{55,8},{55,16},{57,20},
  }
- local cbx,cby=cf.carx-cf.bx,cf.cary-cf.by
- local tx0,ty0=1+cf.bx\8,
-               1+cf.by\8
+ local cbx,cby=carx-bx,cary-by
+ local tx0,ty0=1+bx\8,
+               1+by\8
  for p in all(hull_pts) do
   local px,py=cbx+p[1],cby+p[2]
   local gx,gy=1+px\8,1+py\8
-  if gx>0 and gx<=cf.w and
-     gy>0 and gy<=cf.h then
-   for y=gy,cf.h do
-    if cf.grid[y][gx]==sid_empty then
+  if gx>0 and gx<=w and
+     gy>0 and gy<=h then
+   for y=gy,h do
+    if grid[y][gx]==sid_empty then
      -- update grid cell
-     cf.grid[y][gx]=sid_invisible
+     grid[y][gx]=sid_invisible
      -- set bit in collmasks
      -- no, don't do this; it blocks
      -- bullets. only placed blocks
@@ -968,18 +971,15 @@ function fill_car_cells()
      --cf.collmasks[row]|=1<<bit
     end
    end
-  else
-   -- todo: this would indicate
-   -- the car is not fully buried,
-   -- so game over?
   end
  end
 end
 
-function update_debris()
- local inp=cf.debris
+function cf_update(_ENV)
+ bg:update()
+ -- update debris
  local outp={}
- for p in all(inp) do
+ for p in all(debris) do
   p.px+=p.vx
   p.py+=p.vy
   p.vy+=1
@@ -987,28 +987,24 @@ function update_debris()
    add(outp,p)
   end
  end
- cf.debris=outp
-end
-
-function cf_update()
- bg:update()
- update_debris()
- cf.wheel_r=(cf.wheel_r+0.17*cf.carvx)%1
+ debris=outp
+ -- update wheel
+ wheel_r=(wheel_r+0.17*carvx)%1
  -- fall + collision checks
  -- x
- local carx2=cf.carx+cf.carvx
+ local carx2=carx+carvx
  local xfix=0
- for p in all(cf.coll_pts) do
+ for p in all(coll_pts) do
   -- compute point and tile
   -- relative to gem grid
   local px,py=carx2+p[1],
-            cf.cary+p[2]
-  if collides(cf.collmasks,px,py) then
+              cary+p[2]
+  if collides(collmasks,px,py) then
    -- collision
    -- compute how far px can go
    -- before it hits this tile.
-   local px0=cf.carx+p[1]
-   local pxs=cf.carvx<0
+   local px0=carx+p[1]
+   local pxs=carvx<0
          and (px0&0xfff8)\1
          or  (px0|0x7)\1
    if abs(pxs-px)>abs(xfix) then
@@ -1016,14 +1012,14 @@ function cf_update()
    end
    -- spawn debris particles
    -- at higher velocities
-   if abs(cf.carvx)>0.5 then
+   if abs(carvx)>0.5 then
     local pcount=1+rnd(4)\1
     for i=1,pcount do
-     add(cf.debris,{
+     add(debris,{
       s=rnd(sid_car_debris),
       px=pxs,
       py=py,
-      vx=cf.carvx,
+      vx=carvx,
       vy=-10+rnd(4),
      })
     end
@@ -1032,38 +1028,38 @@ function cf_update()
  end
  if xfix~=0 then
   carx2+=xfix
-  cf.damaged=true
+  damaged=true
   -- flip velocity
-  cf.carvx*=-0.5
-  if abs(cf.carvx)<0.25 then
+  carvx*=-0.5
+  if abs(carvx)<0.25 then
    -- car is at rest.
    -- clamp to zero
-   cf.carvx=0
+   carvx=0
    -- see if the car is deep
    -- enough to bury. if not,
    -- game over. otherwise
    -- advance to burying.
    local toprowclear=true
-   for x=1,cf.w do
-    if cf.grid[1][x]~=sid_empty then
+   for x=1,w do
+    if grid[1][x]~=sid_empty then
      deepenough=false
      break
     end
    end
-   if toprowclear and cf.cary>cf.by+6 then
-    fill_car_cells()
+   if toprowclear and cary>by+6 then
+    cf:fill_car_cells()
     set_next_mode("carbury",{
-     grid=cf.grid,
-     collmasks=cf.collmasks,
-     w=cf.w,
-     h=cf.h,
-     bx=cf.bx,
-     by=cf.by,
-     dirtx=cf.dirtx,
-     dirth=cf.dirth,
-     carx=cf.carx,
-     cary=cf.cary,
-     wheel_r=cf.wheel_r,
+     grid=grid,
+     collmasks=collmasks,
+     w=w,
+     h=h,
+     bx=bx,
+     by=by,
+     dirtx=dirtx,
+     dirth=dirth,
+     carx=carx,
+     cary=cary,
+     wheel_r=wheel_r,
     })
    else
     set_next_mode("gameover",{
@@ -1072,23 +1068,23 @@ function cf_update()
    end
   end
  end
- cf.carx=carx2
+ carx=carx2
  -- y
  -- terminal velocity of 8 to avoid
  -- tunneling through an entire tile
- cf.carvy=min(8,cf.carvy+cf.gravity)
- local cary2=cf.cary+cf.carvy
+ carvy=min(8,carvy+gravity)
+ local cary2=cary+carvy
  local yfix=0
- for p in all(cf.coll_pts) do
+ for p in all(coll_pts) do
   -- compute point and tile
   -- relative to gem grid
-  local px,py=cf.carx+p[1],
-                cary2+p[2]
-  if collides(cf.collmasks,px,py) then
+  local px,py=carx+p[1],
+              cary2+p[2]
+  if collides(collmasks,px,py) then
    -- collision
    -- compute how far py can go
    -- before it hits this tile.
-   local py0=cf.cary+p[2]
+   local py0=cary+p[2]
    local pys=(py0|0x7)\1
    if abs(pys-py)>abs(yfix) then
     yfix=pys-py
@@ -1098,61 +1094,59 @@ function cf_update()
  if yfix~=0 then
   cary2+=yfix
   -- zero velocity
-  cf.carvy=0
+  carvy=0
  end
- cf.cary=cary2
+ cary=cary2
  -- animate runner
- cf.runner_t=1+cf.runner_t%8
- cf.runnerx-=2
+ runner_t=1+runner_t%8
+ runnerx-=2
  -- did the car drive right over
  -- the pit?
- if cf.carx<-100 then
+ if carx<-100 then
   set_next_mode("gameover",{
    reason="dig a pit to trap the cadillac!",
   })
  end
 end
 
-function cf_draw()
+function cf_draw(_ENV)
  -- draw bg
  bg:draw()
  -- draw board
- map(2,0,cf.bx-8,cf.by,cf.w+2,cf.h)
- local by=cf.by
- for y=1,cf.h do
-  local bx=cf.bx
-  for x=1,cf.w do
-   spr(cf.grid[y][x],bx,by)
-   bx+=8
+ map(2,0,bx-8,by,w+2,h)
+ local bgy=by
+ for row in all(grid) do
+  local bgx=bx
+  for s in all(row) do
+   spr(s,bgx,bgy)
+   bgx+=8
   end
-  by+=8
+  bgy+=8
  end
  -- draw car
- rspr(cf.carx+11,
-      cf.cary+21,cf.wheel_r,
+ rspr(carx+11,cary+21,wheel_r,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
- rspr(cf.carx+47,
-      cf.cary+21,cf.wheel_r+0.17,
+ rspr(carx+47,cary+21,wheel_r+0.17,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
- if cf.damaged then
+ if damaged then
   spr(sid_car_bumper2,
-   cf.carx,cf.cary+8,2,2)
+   carx,cary+8,2,2)
   spr(sid_car+2,
-   cf.carx+16,cf.cary,6,3)
+   carx+16,cary,6,3)
  else
-  spr(sid_car,cf.carx,cf.cary,8,3)
+  spr(sid_car,carx,cary,8,3)
  end
  -- draw running digger
- spr(sid_running[cf.runner_t],
-     cf.runnerx,cf.runnery-5*abs(sin(cf.runner_t/16)),2,2)
+ spr(sid_running[runner_t],
+     runnerx,runnery-5*abs(sin(runner_t/16)),2,2)
  -- draw dirt pile
  local dsx,dsy=sprxy(sid_dirt_pile)
- sspr(dsx,dsy,16,16,cf.dirtx,cf.by,
-      16,-cf.dirth/3,false,true)
+ sspr(dsx,dsy,16,16,dirtx,by,
+      16,-dirth/3,false,true)
  -- draw debris particles
- for p in all(cf.debris) do
+ for p in all(debris) do
   spr(p.s,p.px,p.py)
  end
  -- debug
@@ -1182,7 +1176,9 @@ end
 cb={}
 
 function cb_enter(args)
- cb={
+ cb=obj({
+  update=cb_update,
+  draw=cb_draw,
   bx=args.bx,
   by=args.by,
   w=args.w,
@@ -1231,91 +1227,92 @@ function cb_enter(args)
   dirtfalls={},
   bullets={},
   particles={},
- }
-end            
+ })
+ return cb
+end
 
-function cb_update()
- bg:update(-cb.dpanx)
- if cb.phase==0 then
+function cb_update(_ENV)
+ bg:update(-dpanx)
+ if phase==0 then
   -- intro cutscene, not interactive yet
   -- digger walks in, window rolls down
-  cb.window_r[4]=min(7,cb.window_r[4]+0.125)
-  cb.diggerx+=0.5
-  if cb.diggerx>=cb.bx then
-   cb.phase=1
-   cb.digger_ag:to("idle_e")
+  window_r[4]=min(7,window_r[4]+0.125)
+  diggerx+=0.5
+  if diggerx>=bx then
+   phase=1
+   digger_ag:to("idle_e")
   end
- elseif cb.phase==1 then
+ elseif phase==1 then
   -- regular gameplay
   -- handle cursor movement
   local dx=0
   if (btnp(⬅️)) dx-=1
   if (btnp(➡️)) dx+=1
   -- cx may range outside the board!
-  local cx2=clamp(cb.cx+dx,-2,cb.w+2)
-  if cx2~=cb.cx then
-   cb.diggerf=cx2<cb.cx
+  local cx2=clamp(cx+dx,-2,w+2)
+  if cx2~=cx then
+   diggerf=cx2<cx
    sfx(sfx_click,0)
   end
-  cb.cx=cx2
+  cx=cx2
   -- handle dirt pickup/drop
   if btnp(🅾️) then
-   if not cb.carrying
-      and cb.cx<=0 then
+   if not carrying
+      and cx<=0 then
     -- pick up dirt from dirt pile
-    cb.carrying=true
-    cb.digger_ag:to("pickup")
-    cb.dirth-=1
+    carrying=true
+    digger_ag:to("pickup")
+    dirth-=1
     sfx(sfx_select,0)
-   elseif cb.carrying
-          and cb.cx>=1 and cb.cx<=cb.w
-          and cb.grid[1][cb.cx]==sid_empty then
+   elseif carrying
+          and cx>=1 and cx<=w
+          and grid[1][cx]==sid_empty then
     -- drop dirt
-    cb.carrying=false
-    cb.digger_ag:to("drop")
+    carrying=false
+    digger_ag:to("drop")
     sfx(sfx_dope1,0)
-    if cb.grid[2][cb.cx]~=sid_empty then
+    if grid[2][cx]~=sid_empty then
      -- place road
-     cb.grid[1][cb.cx]=sid_fillroad
+     grid[1][cx]=sid_fillroad
      -- update collmask
-     local row=1+cb.by\8
-     local bit=(cb.bx-8+8*cb.cx)\8
-     cb.collmasks[row]|=1<<bit
+     local row=1+by\8
+     local bit=(bx-8+8*cx)\8
+     collmasks[row]|=1<<bit
      -- check for victory
      local buried=true
-     for x=1,cb.w do
-      if cb.grid[1][x]~=sid_fillroad then
+     for x=1,w do
+      if grid[1][x]~=sid_fillroad then
        buried=false
        break
       end
      end
      if buried
         then
-      cb.phase=2
-      cb.diggerx=cb.bx-12+8*cb.cx
-      cb.dpanx=-0.25
-      cb.digger_ag:to("walk")
+      phase=2
+      diggerx=bx-12+8*cx
+      dpanx=-0.25
+      digger_ag:to("walk")
      end
     else
      -- place falling dirt.
      -- figure out how far it
      -- needs to fall.
-     local ecy=cb.h
-     for y=2,cb.h do
-      if cb.grid[y][cb.cx]~=sid_empty then
+     local ecy=h
+     for y=2,h do
+      if grid[y][cx]~=sid_empty then
        ecy=y-1
        break
       end
      end
-     add(cb.dirtfalls,{
-      px=cb.bx-8+cb.cx*8,
-      py=cb.by-4,
+     add(dirtfalls,{
+      px=bx-8+cx*8,
+      py=by-4,
       vy=0,
       s=rnd(sid_filldirt),
       ey=ey,
-      ecx=cb.cx,
+      ecx=cx,
       ecy=ecy,
-      ey=cb.by-8+8*ecy,
+      ey=by-8+8*ecy,
      })
     end
    else
@@ -1324,51 +1321,51 @@ function cb_update()
    end
   end
   -- dolan aiming
-  local tdx,tdy=cb.bx-12+8*cb.cx,
-                cb.by-12
+  local tdx,tdy=bx-12+8*cx,
+                by-12
   local aim_speed=0.03 -- 0..1, higher=faster convergence
   local aim_drift=0.006 -- lower=steadier aim
   -- target is where dolan is trying to aim
-  cb.targetx+=aim_speed*(tdx-cb.targetx)
-  cb.targety+=aim_speed*(tdy-cb.targety)
-  cb.targett+=0.004
+  targetx+=aim_speed*(tdx-targetx)
+  targety+=aim_speed*(tdy-targety)
+  targett+=0.004
   -- aimx/y is where dolan is actually aiming
-  cb.aimx,cb.aimy=cb.targetx+cb.targetr*sin(1.13*cb.targett),
-                  cb.targety+cb.targetr*sin(0.73*cb.targett)
+  aimx,aimy=targetx+targetr*sin(1.13*targett),
+            targety+targetr*sin(0.73*targett)
   -- compute current arm angle and
   -- muzzle position
-  local ax,ay=cb.carx+cb.armx,
-              cb.cary+cb.army
-  local tx,ty=cb.aimx,cb.aimy
-  cb.aimtheta=atan2(tx-ax,ay-ty)
-  cb.muzx,cb.muzy=ax+7*cos(cb.aimtheta+.03),
-                  ay-7*sin(cb.aimtheta+.03)
+  local ax,ay=carx+armx,
+              cary+army
+  local tx,ty=aimx,aimy
+  aimtheta=atan2(tx-ax,ay-ty)
+  muzx,muzy=ax+7*cos(aimtheta+.03),
+            ay-7*sin(aimtheta+.03)
   -- dolan shooting
-  cb.shootc-=1
-  cb.reloadc-=1
-  if cb.shootc<=0 then
+  shootc-=1
+  reloadc-=1
+  if shootc<=0 then
    sfx(sfx_shoot,0,rnd(5)\1)
    -- reset shot timer
-   cb.shooti=1+cb.shooti%#cb.shoot_fcounts
-   cb.shootc=cb.shoot_fcounts[cb.shooti]
+   shooti=1+shooti%#shoot_fcounts
+   shootc=shoot_fcounts[shooti]
    -- reload?
-   if cb.shooti==1 then
-    cb.reloadc=cb.reload_time
+   if shooti==1 then
+    reloadc=reload_time
    end
    -- recoil
-   cb.targetx+=12
+   targetx+=12
    -- fire bullet
-   add(cb.bullets,{
-    px=cb.muzx,
-    py=cb.muzy,
-    vx=2*cos(cb.aimtheta),
-    vy=2*-sin(cb.aimtheta),
+   add(bullets,{
+    px=muzx,
+    py=muzy,
+    vx=2*cos(aimtheta),
+    vy=2*-sin(aimtheta),
     c=7,
    })
    -- eject casing
-   add(cb.particles,{
-    px=cb.muzx,
-    py=cb.muzy,
+   add(particles,{
+    px=muzx,
+    py=muzy,
     vx=rnd(2)-1,
     vy=-0.1,
     c=13,
@@ -1376,51 +1373,50 @@ function cb_update()
   end
   -- when reload ends, reset target
   -- so he has to aim again
-  if cb.reloadc==0 then
-   cb.targetx,cb.targety=0,cb.cary+8
+  if reloadc==0 then
+   targetx,targety=0,cary+8
   end
- elseif cb.phase==2 then
+ elseif phase==2 then
   -- outro cutscene
   -- pan camera until pit is
   -- offscreen
-  cb.panx+=cb.dpanx
-  if cb.panx<-128 then
-   cb.dpanx=0
+  panx+=dpanx
+  if panx<-128 then
+   dpanx=0
   end
   -- walk until digger is offscreen
-  cb.diggerx-=0.25
-  if cb.diggerx<=-120 then
-   cb.fade_step-=0.1
-   if cb.fade_step<=0 then
+  diggerx-=0.25
+  if diggerx<=-120 then
+   fade_step-=0.1
+   if fade_step<=0 then
     set_next_mode("victory")
    end
-  else
   end
  end
  -- update falling dirt
  local dirtfalls2={}
- for df in all(cb.dirtfalls) do
+ for df in all(dirtfalls) do
   df.vy+=0.1
   df.py+=df.vy
   if df.py>=df.ey then
    -- dirt has landed.
    -- update grid
-   cb.grid[df.ecy][df.ecx]=df.s
+   grid[df.ecy][df.ecx]=df.s
    -- update collmasks
-   local row=cb.by\8+df.ecy
-   local bit=(cb.bx-8+8*df.ecx)\8
-   cb.collmasks[row]|=1<<bit
+   local row=by\8+df.ecy
+   local bit=(bx-8+8*df.ecx)\8
+   collmasks[row]|=1<<bit
   else
    add(dirtfalls2,df)
   end
  end
- cb.dirtfalls=dirtfalls2
+ dirtfalls=dirtfalls2
  -- update bullets
  local bullets2={}
- local plx0,ply0=cb.bx-(cb.diggerf and 4 or 12)+8*cb.cx,
-                 cb.by-16
+ local plx0,ply0=bx-(diggerf and 4 or 12)+8*cx,
+                 by-16
  local plx1,ply1=plx0+6,ply0+15
- for b in all(cb.bullets) do
+ for b in all(bullets) do
   b.px+=b.vx
   b.py+=b.vy
   b.c=16-b.c
@@ -1430,14 +1426,14 @@ function cb_update()
      b.py>=ply0 and b.py<=ply1 then
    -- hit player
    hit=true
-   cb.health-=1
-   if cb.health<=0 then
+   health-=1
+   if health<=0 then
     set_next_mode("gameover",{
      reason="don't get shot so much!",
     })
    end
    for i=1,5 do
-    add(cb.particles,{
+    add(particles,{
      px=b.px,
      py=b.py,
      vx=b.vx*rnd(),
@@ -1449,16 +1445,16 @@ function cb_update()
   -- test intersection against
   -- falling dirts
   if not hit and
-     not collides(cb.collmasks,b.px,b.py) and
+     not collides(collmasks,b.px,b.py) and
      b.px>-8 and b.px<128 and
      b.py>-8 and b.py<128 then
    add(bullets2,b)
   end
  end
- cb.bullets=bullets2
+ bullets=bullets2
  -- update particles
  local particles2={}
- for p in all(cb.particles) do
+ for p in all(particles) do
   p.vy+=0.1
   p.px+=p.vx
   p.py+=p.vy
@@ -1466,119 +1462,115 @@ function cb_update()
    add(particles2,p)
   end
  end
- cb.particles=particles2
+ particles=particles2
 end
 
-function cb_draw()
+function cb_draw(_ENV)
  -- draw bg
  camera()
  bg:draw()
- camera(cb.panx,0)
+ camera(panx,0)
  -- draw board
- map(2,0,cb.bx-8,cb.by,cb.w+2,cb.h)
- local by=cb.by
- for row in all(cb.grid) do
-  local bx=cb.bx
+ map(2,0,bx-8,by,w+2,h)
+ local bgy=by
+ for row in all(grid) do
+  local bgx=bx
   for s in all(row) do
-   spr(s,bx,by)
-   bx+=8
+   spr(s,bgx,bgy)
+   bgx+=8
   end
-  by+=8
+  bgy+=8
  end
  -- draw car
- rspr(cb.carx+11,
-      cb.cary+21,cb.wheel_r,
+ rspr(carx+11,cary+21,wheel_r,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
- rspr(cb.carx+47,
-      cb.cary+21,cb.wheel_r+0.17,
+ rspr(carx+47,cary+21,wheel_r+0.17,
       m_wheelx,m_wheely,m_wheelw,
       true,0.75)
  spr(sid_car_bumper2,
-   cb.carx,cb.cary+8,2,2)
+   carx,cary+8,2,2)
  spr(sid_car+2,
-   cb.carx+16,cb.cary,6,3)
+   carx+16,cary,6,3)
  -- draw car window and dolan
- clip(cb.carx+cb.window_r[1],
-      cb.cary+cb.window_r[2],
-      1+cb.window_r[3]-cb.window_r[1],
-      1+cb.window_r[4]-cb.window_r[2])
- rectfill(cb.carx+cb.window_r[1],
-          cb.cary+cb.window_r[2],
-          cb.carx+cb.window_r[3],
-          cb.cary+cb.window_r[4],
+ clip(carx+window_r[1],
+      cary+window_r[2],
+      1+window_r[3]-window_r[1],
+      1+window_r[4]-window_r[2])
+ rectfill(carx+window_r[1],
+          cary+window_r[2],
+          carx+window_r[3],
+          cary+window_r[4],
           -16)
  spr(sid_dolan_head,
-     cb.carx+cb.window_r[1],
-     cb.cary+cb.window_r[2])
+     carx+window_r[1],
+     cary+window_r[2])
  clip()
  -- draw dirt pile
  local dsx,dsy=sprxy(sid_dirt_pile)
- sspr(dsx,dsy,16,16,cb.dirtx,cb.by,
-      16,-cb.dirth/3,false,true)
- if cb.phase==0 then
+ sspr(dsx,dsy,16,16,dirtx,by,
+      16,-dirth/3,false,true)
+ if phase==0 then
   -- draw walking
-  spr(cb.digger_ag:nextv(),
-      cb.diggerx,cb.by-16,1,2)
- elseif cb.phase==1 then
+  spr(digger_ag:nextv(),
+      diggerx,by-16,1,2)
+ elseif phase==1 then
   -- draw health
-  print(sub("♥♥♥",1,cb.health),
+  print(sub("♥♥♥",1,health),
    100,4,8)
-  if cb.reloadc<=0 then
+  if reloadc<=0 then
    -- draw dolan arm
-   local ax,ay=cb.carx+cb.armx,
-               cb.cary+cb.army
-   rspr(ax,ay,cb.aimtheta,
+   local ax,ay=carx+armx,
+               cary+army
+   rspr(ax,ay,aimtheta,
         m_armx,m_army,m_armw)
    -- draw laser sight
    fillp(0.5+rnd(0xffff)\1)
-   local ldx,ldy=cb.aimx-cb.muzx,
-                 cb.aimy-cb.muzy
-   line(cb.muzx,cb.muzy,
-        cb.muzx+20*ldx,
-        cb.muzy+20*ldy,8)
+   local ldx,ldy=aimx-muzx,
+                 aimy-muzy
+   line(muzx,muzy,
+        muzx+20*ldx,
+        muzy+20*ldy,8)
    fillp()
   end
   -- draw digger
-  spr(cb.digger_ag:nextv(),
-      cb.bx-12+8*cb.cx,
-      cb.by-16,2,2,cb.diggerf)
+  spr(digger_ag:nextv(),
+      bx-12+8*cx,
+      by-16,2,2,diggerf)
   -- draw dirtfalls
-  for df in all(cb.dirtfalls) do
+  for df in all(dirtfalls) do
    spr(df.s,df.px,df.py)
   end
   -- draw bullets
-  for b in all(cb.bullets) do
+  for b in all(bullets) do
    circfill(b.px,b.py,1,b.c)
   end
   -- draw particles
-  for p in all(cb.particles) do
+  for p in all(particles) do
    pset(p.px,p.py,p.c)
    pset(p.px,p.py+1,1)
   end
   -- draw cursor
   fillp(0x5c5c.8)
-  if cb.carrying
-     and cb.cx>=1
-     and cb.cx<=cb.w then
+  if carrying
+     and cx>=1 and cx<=cb.w then
    -- draw cursor on grid column
-   local lx,ly=cb.bx+cb.cx*8-8,
-               cb.by
+   local lx,ly=bx+cx*8-8,by
    line(lx,ly,lx+7,ly,7)
-  elseif cb.cx<=0
-         and not cb.carrying then
+  elseif cx<=0
+         and not carrying then
    -- highlight dirt pile
-   rect(cb.dirtx,cb.by,
-        cb.dirtx+15,cb.by-16,7)
+   rect(dirtx,by,
+        dirtx+15,by-16,7)
   else
    -- no visible cursor
   end
   fillp()
- elseif cb.phase==2 then
-  fade(cb.fade_step)
+ elseif phase==2 then
+  fade(fade_step)
   -- digger walks to the left
-  spr(cb.digger_ag:nextv(),
-      cb.diggerx,cb.by-16,1,2,true)
+  spr(digger_ag:nextv(),
+      diggerx,by-16,1,2,true)
  end
  -- debug
  --[[
@@ -1611,38 +1603,41 @@ end
 
 go={}
 function go_enter(args)
- go={
+ go=obj({
+  update=go_update,
+  draw=go_draw,
   reason=args.reason,
   fade_step=0,
   dfade=0.25,
   t=0,
   can_advance=false,
- }
+ })
+ return go
 end
 
-function go_update()
- go.fade_step=clamp(go.fade_step+go.dfade,0,fade_max_step)
- if go.fade_step==1 then
-  go.can_advance=true
+function go_update(_ENV)
+ fade_step=clamp(fade_step+dfade,0,fade_max_step)
+ if fade_step==1 then
+  can_advance=true
  end
- if go.can_advance then
-  if go.dfade>0 and btnp(🅾️) then
-   go.dfade=-1*abs(go.dfade)
-  elseif go.fade_step==0 then
+ if can_advance then
+  if dfade>0 and btnp(🅾️) then
+   dfade=-1*abs(dfade)
+  elseif fade_step==0 then
    set_next_mode("menu")
   end
  end
 end
 
-function go_draw()
+function go_draw(_ENV)
  function cprint(msg,y,c)
   print(msg,64-2*#msg,y,c)
  end
  cls(0)
- fade(go.fade_step)
+ fade(fade_step)
  cprint("game over",56,8)
- cprint(go.reason,64,7)
- if go.can_advance then
+ cprint(reason,64,7)
+ if can_advance then
   cprint("press 🅾️ to try again",96,7)
  end
 end
@@ -1650,34 +1645,37 @@ end
 --------------------
 
 vt={}
-function vt_enter(args)
- vt={
+function vt_enter()
+ vt=obj({
+  update=vt_update,
+  draw=vt_draw,
   fade_step=0,
   dfade=0.1,
   phase=0,
- }
+ })
  camera()
+ return vt
 end
 
-function vt_update()
- if vt.phase==0 then
+function vt_update(_ENV)
+ if phase==0 then
   -- fade in
-  vt.fade_step=min(vt.fade_step+vt.dfade,
-                   fade_max_step)
+  fade_step=min(fade_step+dfade,
+                fade_max_step)
   if btnp(🅾️) then
-   vt.phase=1
+   phase=1
   end
  else
   -- fade out
-  vt.fade_step-=vt.dfade
-  if vt.fade_step<=0 then
+  fade_step-=dfade
+  if fade_step<=0 then
    set_next_mode("menu")
   end
  end
 end
 
-function vt_draw()
- fade(vt.fade_step)
+function vt_draw(_ENV)
+ fade(fade_step)
  print("⁶-b⁶x8⁶y8²0     ᶜ1⁶.\0\0\0\0\0\0ナュ⁶.\0\0\0\0█◝◝◝⁶.\0\0\0ナ◝◝◝◝⁶.\0\0\0◝◝◝◝◝⁶.\0\0\0゜◝◝◝◝⁶.\0\0\0\0³?◝◝⁶.\0\0\0\0\0\0¹ᶠ  ²0⁶.\0\0 \0\0\0▮\0⁸⁶-#ᶜ2⁶.@\0\0  \0\0▮⁸⁶-#ᶜ4⁶.█ららららナナナ²0ᶜ1⁶.▮\0\0\0⁸\0\0\0⁸⁶-#ᶜ2⁶.\0\0⁸⁸\0\0\0⁴⁸⁶-#ᶜ4⁶.ᶠᶠ⁷⁷⁷⁷⁷³\n²0ᶜ5⁶.\0\0\0\0\0\0\0ナ²0ᶜ1⁶.\0\0\0\0\0\0█ら⁸⁶-#ᶜ5⁶.\0\0\0\0\0\0\0¹²0ᶜ1⁶.\0\0\0ナヲ◝◝゜⁸⁶-#ᶜ5⁶.\0\0\0\0\0\0\0 ⁸⁶-#ᶜa⁶.\0\0\0\0\0\0\0ら²0ᶜ1⁶.\0\0◝◝◝◝◝◜⁸⁶-#ᶜ4⁶.\0\0\0\0\0\0\0¹²0ᶜ1⁶.█ュ◝◝◝◝◝◝²1ᶜ5⁶.\0\0\0\0\0\0\0▮ ²1ᶜ2⁶.\0\0\0\0\0\0\0h⁸⁶-#ᶜ5⁶.\0\0\0\0\0\0\0000²1 ²1ᶜ2⁶.\0\0\0\0\0\0\0▮⁸⁶-#ᶜ5⁶.\0\0\0\0\0\0\0█⁸⁶-#ᶜ9⁶.\0\0\0\0\0\0\0`²1ᶜ4⁶.\0\0\0\0\0\0\0█⁸⁶-#ᶜa⁶.\0\0\0\0\0\0\0`²1ᶜ0⁶.ら\0\0\0\0\0\0\0⁸⁶-#ᶜ4⁶.\0\0\0\0\0\0\0²⁸⁶-#ᶜa⁶.\0\0\0\0\0\0\0ᶜ²1ᶜ0⁶.◝◝ナ█\0\0\0\0⁶.◝◝◝◝◜ナ█\0²1⁶.ᶠᶠ⁷⁷⁷⁷³\0⁸⁶-#ᶜ2⁶.▮\0\0⁸⁸\0\0\0⁸⁶-#ᶜ4⁶.ナユユユユヲヲヲ²1ᶜ0⁶.ヲヲュュュ◜◜◜⁸⁶-#ᶜ2⁶.⁴\0\0²\0\0¹¹⁸⁶-#ᶜ4⁶.³³³¹¹¹\0\0\n²1ᶜ0⁶.ᶠ??゜゜ᶠ⁷³⁸⁶-#ᶜ4⁶.\0█\0\0\0\0  ⁸⁶-#ᶜ5⁶.▮\0██き \0\0⁸⁶-#ᶜ9⁶.\0\0\0\0\0\0\0@⁸⁶-#ᶜa⁶.ナ@@@@@@\0²1ᶜ0⁶.\0¹¹\0\0\0\0\0⁸⁶-#ᶜ2⁶.\0\0\0\0\0\0\0⁴⁸⁶-#ᶜ4⁶.⁴⁸\0▮▮▮▮p⁸⁶-#ᶜ5⁶.\0²⁘\0\0\0@\0⁸⁶-#ᶜ9⁶.\0\0\0\0\0█\0\0⁸⁶-#ᶜa⁶.³⁴⁸⁸⁸⁸☉☉²1ᶜ4⁶.\0\0\0\0ehd█⁸⁶-#ᶜ5⁶.@\0@@\0²¹⁴⁸⁶-#ᶜ9⁶.\0\0\0\0²✽█@⁸⁶-#ᶜa⁶.█████\0⁸⁸²1ᶜ2⁶.\0\0\0\0⁸\0\0\0⁸⁶-#ᶜ4⁶.¹\0\0\0オ@\0d⁸⁶-#ᶜ5⁶.\0¹¹\0\0 t\0⁸⁶-#ᶜ9⁶.\0\0\0\0 「\0⁸⁸⁶-#ᶜa⁶.\0\0\0\0\0█☉█²1ᶜ2⁶.\0\0\0\0\0\0!\0⁸⁶-#ᶜ4⁶.\0\0\0\0☉t\0▮⁸⁶-#ᶜ5⁶.\0\0\0\0005¹\0\0⁸⁶-#ᶜ9⁶.\0\0\0\0@ ██⁸⁶-#ᶜa⁶.\0\0\0\0\0☉「⁸²1ᶜ2⁶.\0\0 \0¹\0\0\0⁸⁶-#ᶜ4⁶. \0\0\0\0¹¹¹⁸⁶-#ᶜ5⁶.\0 \0\0…\0@@⁸⁶-#ᶜa⁶.▮▮▮▮\0███²1ᶜ2⁶.\0\0\0\0\0⁸\0¹⁸⁶-#ᶜ4⁶.\0\0\0\0⁵¹\0⁴⁸⁶-#ᶜ5⁶.\0\0\0\0\0²\0\0⁸⁶-#ᶜ9⁶.\0\0\0\0²\0\0\0⁸⁶-#ᶜa⁶.\0\0\0\0\0⁴⁴\0²1ᶜ2⁶.█\"\0!\0\0\0\0⁸⁶-#ᶜ4⁶.\0☉🐱░\0¹\0\0⁸⁶-#ᶜ5⁶.⁴\0\0\0e\0\0\0⁸⁶-#ᶜ9⁶.\0\0@\0\0\0³³⁸⁶-#ᶜa⁶.xd⁴b²²\0\0²1ᶜ2⁶.\0\0\0\0\0\0¹⁘⁸⁶-#ᶜ4⁶.\0\0\0\0tr⁴¹⁸⁶-#ᶜ5⁶.\0\0\0\0\0⁸@@⁸⁶-#ᶜ9⁶.\0\0\0\0⁸\0\0\0⁸⁶-#ᶜa⁶.\0\0\0\0\0$\"\"²1ᶜ2⁶.▮\0\0\0\0\0\0¹⁸⁶-#ᶜ4⁶. \0\0 \0⁸@@⁸⁶-#ᶜ5⁶.█き \0⁴□\0⁴⁸⁶-#ᶜ9⁶.\0\0\0\0x@&\0⁸⁶-#ᶜa⁶.@@@@\0$\0\"²1ᶜ2⁶. \0\0\0)☉\0\0⁸⁶-#ᶜ4⁶.█☉░\0⁶\0\"\"⁸⁶-#ᶜ5⁶.⁸\0⁸██!\0\0⁸⁶-#ᶜ9⁶.⁴@\0\0\0\0\0\0⁸⁶-#ᶜa⁶.@⁴@@@fdd²1ᶜ2⁶.\0\0\0\0\0\0²(⁸⁶-#ᶜ4⁶.⁴⁴⁸⁸☉\0\0\0⁸⁶-#ᶜ5⁶.\0\0\0\0\0h⁸🐱⁸⁶-#ᶜ9⁶.\0⁸⁴⁴\0\0ら\0⁸⁶-#ᶜa⁶.⁸\0\0\0⁴░⁴d²1ᶜ2⁶.\0\0\0\0\0@\0\0⁸⁶-#ᶜ4⁶.\0\0\0\0ᶜ¹h☉⁸⁶-#ᶜ5⁶.\0\0\0\0█²\0\0⁸⁶-#ᶜ9⁶.\0\0\0\0³⁸⁴\0⁸⁶-#ᶜa⁶.\0\0\0\0\0░█d²1ᶜ2⁶.\0\0\0\0\0\0²⁸⁸⁶-#ᶜ4⁶.\0\0\0\0¹³\0\0⁸⁶-#ᶜ5⁶.\0\0\0\0⁴⁸⁸²⁸⁶-#ᶜ9⁶.\0\0\0\0²\0\0\0⁸⁶-#ᶜa⁶.\0\0\0\0\0⁴⁴⁴²1ᶜ2⁶.⁴⁴██🐱²\0@⁸⁶-#ᶜ4⁶.ヲヲ||||~>²1ᶜ0⁶.◜ュ\0\0\0\0\0\0\n²1ᶜ2⁶.\0\0\0\0\0█\0\0⁸⁶-#ᶜ4⁶. @@@\0p⁸\0⁸⁶-#ᶜ5⁶.\0\0\0\0@\0\0\0⁸⁶-#ᶜ9⁶.@ \0\0\0\0\0\0⁸⁶-#ᶜa⁶.\0\0    ユ\0²1ᶜ2⁶.\0▮ ²⁸\0²█⁸⁶-#ᶜ4⁶.█░\0⁸²▒¹\0⁸⁶-#ᶜ5⁶.⁘\0█き█⁴@\0⁸⁶-#ᶜ9⁶.\0\0⁴\0\0@\0\0⁸⁶-#ᶜa⁶.hhhdd²█\0²1ᶜ2⁶.\0\0\0\0²▮「◜⁸⁶-#ᶜ4⁶.█░⁴⁸⁸🐱█\0⁸⁶-#ᶜ5⁶.⁴\0█き  $¹⁸⁶-#ᶜ9⁶.@\0\0⁴\0\0\0\0⁸⁶-#ᶜa⁶.⁸hh@ddc\0²1ᶜ2⁶.\0\0²\"□²#◝⁸⁶-#ᶜ4⁶.hh██きそ⁴\0⁸⁶-#ᶜ5⁶.\0\0⁸⁸⁸■\0\0⁸⁶-#ᶜ9⁶.\0█@\0\0\0\0\0⁸⁶-#ᶜa⁶.░⁴⁴dddス\0²1ᶜ2⁶.⁴\0@\000322◝⁸⁶-#ᶜ4⁶.▮\0\0⁴deh\0⁸⁶-#ᶜ5⁶.\0⁘⁴@\0\0¹\0⁸⁶-#ᶜ9⁶.\0\0\0\0⁸⁸⁴\0⁸⁶-#ᶜa⁶.☉☉☉☉███\0²1ᶜ2⁶.@\0らもよお>○⁸⁶-#ᶜ4⁶.¹█\0@\0¹¹\0⁸⁶-#ᶜ5⁶.\0¹¹\0\0 \0█⁸⁶-#ᶜ9⁶.\0\0\0\0@\0\0\0⁸⁶-#ᶜa⁶.█\0\0\0\0@ら\0²1ᶜ2⁶.\0\0ヲヲンュュ◝⁸⁶-#ᶜ4⁶.\0²\0⁴\0\0²\0⁸⁶-#ᶜ5⁶.\0\0⁴¹⁴¹\0\0⁸⁶-#ᶜ9⁶.¹\0\0\0\0\0\0\0⁸⁶-#ᶜa⁶.\0¹³²²²¹\0²1ᶜ2⁶.\0\0ュュう█り◝⁸⁶-#ᶜ4⁶.²²²\0a⁘²\0⁸⁶-#ᶜ5⁶.\0\0\0\0\0i \0⁸⁶-#ᶜ9⁶.\0\0\0³\0\0▮\0⁸⁶-#ᶜa⁶.¹¹¹\0²\"ᶜ\0²1ᶜ2⁶.@\0アアろ░█◝⁸⁶-#ᶜ4⁶.¹□□²²ap\0⁸⁶-#ᶜ5⁶.▮\0\0\0⁸\0	\0⁸⁶-#ᶜ9⁶.²¹¹ !(\0\0⁸⁶-#ᶜa⁶.   ■▮□&\0²1ᶜ2⁶.⁴▮😐アア█▒タ⁸⁶-#ᶜ4⁶.a¹¹■¹ix\0⁸⁶-#ᶜ5⁶.\0@p\0\0⁴\0$⁸⁶-#ᶜ9⁶.\0\0²²\0▮\0\0⁸⁶-#ᶜa⁶.\"\"  2\"&\0²1ᶜ2⁶.\0\0▥▥▥■▥◝⁸⁶-#ᶜ4⁶.\"ddd\0ア\0\0⁸⁶-#ᶜ5⁶.\0\0\0\0d\0\0\0⁸⁶-#ᶜ9⁶.d\"\"\0\0\0\0\0⁸⁶-#ᶜa⁶.\0\0\0\"\"\"f\0²1ᶜ2⁶.\0\0¹」▥■1○⁸⁶-#ᶜ4⁶. \"\"\"$(\0\0⁸⁶-#ᶜ5⁶.²\0\0\0\0█⁸█⁸⁶-#ᶜ9⁶.\0\0dd²⁶²\0⁸⁶-#ᶜa⁶.dd\0\0@@ろ\0²1ᶜ2⁶.\0🐱\0\0▥00◝⁸⁶-#ᶜ4⁶.⁸\0 \"\0웃k\0⁸⁶-#ᶜ5⁶.き(\n\0 \0\0\0⁸⁶-#ᶜ9⁶.\0\0\0\0\0²\0\0⁸⁶-#ᶜa⁶.ddddfd░\0²1ᶜ2⁶.⁴\0\0\0░▥ュ○⁸⁶-#ᶜ4⁶.\0\0\0\0\0⁶\0█⁸⁶-#ᶜ9⁶.\0\0\0\0\0\0²\0⁸⁶-#ᶜa⁶.\0\0\0\0\0\0¹\0²1ᶜ2⁶.a¹\0   \0`⁸⁶-#ᶜ4⁶.>>?゜゜゜゜゜²1 \nᶜ2⁶.\0\0\0\0█ヲュ◝⁶.らユュ◝◝◝◝◝²2ᶜ5⁶.\0\0\0\0\0\0\0?          ᶜ4⁶.らららららナナナ²2⁶.ᶠᶠᶠᶠᶠ⁷⁷⁷⁸⁶-#ᶜ5⁶.\0\0\0\0\0\0\0ナ²2ᶜ1⁶.◜ら\0\0\0\0\0\0⁸⁶-#ᶜ5⁶.\0\0\0\0\0\0\0?\n²2ᶜ1⁶.ユ²\0\0\0$dl⁸⁶-#ᶜ5⁶.\0ュ◝◝◝タい⧗²2ᶜ1⁶.\0\0\0\0\0\0\0²⁸⁶-#ᶜ5⁶.ユ◝◝◝◝◝◝ョ²1⁶.◝◝◝◝◝◝◝よ²1ᶜ2⁶.ら\0\0\0\0\0\0\0⁸⁶-#ᶜ5⁶.?◝◝◝◝◝◝ル²2⁶.\0\0³ᶠ◝◝◝◝⁶.\0\0\0\0○◝◝◝⁶.\0\0\0\0\0¹³⁷    ⁶.\0\0\0\0\0\0\0ナ⁶.\0\0\0\0\0ナ◝◝²2ᶜ4⁶.ナナユユユユユヲ⁸⁶-#ᶜ5⁶.\0\0\0⁸ᶠᶠᶠ⁷²1ᶜ4⁶.⁷³³³¹¹¹¹⁸⁶-#ᶜ5⁶.ヲュュ<おゆゆ~²1⁶.◝◝ュルノノノユ\n⁶.⧗❎◆゜゜よよ⁷⁶.ュュュュ◝◝◝\0⁶.よよよ○◝◝\0\0⁶.ノナユユュ\0\0\0⁶.◝◝◝◝◝\0\0\0⁶.◝◝◝◝³\0\0\0²1ᶜ2⁶.ら\0\0\0\0\0\0\0⁸⁶-#ᶜ5⁶.?◝◝◝◝\0\0\0²1ᶜ2⁶.◝◝ュナ\0\0\0\0⁸⁶-#ᶜ5⁶.\0\0³ᶠᶠ\0\0\0²1ᶜ2⁶.◝◝◝◝\0\0\0\0⁸⁶-#ᶜ5⁶.\0\0\0\0ら\0⁴¹⁸⁶-#ᶜd⁶.\0\0\0\0\0ナヲ◜²1ᶜ2⁶.◝◝◝◝\0\0\0\0⁸⁶-#ᶜ5⁶.\0\0\0\0゜ \0\0⁸⁶-#ᶜa⁶.\0\0\0\0\0²\0\0⁸⁶-#ᶜd⁶.\0\0\0\0\0。◝◝²1ᶜ2⁶.◝◝○ᶠ\0\0\0\0⁸⁶-#ᶜ5⁶.\0\0█ユ\0\0¹⁴⁸⁶-#ᶜd⁶.\0\0\0\0\0\0\0³²1ᶜ2⁶.⁷¹\0\0\0\0\0\0⁸⁶-#ᶜ5⁶.ヲ◜◝◝\0\0\0\0²1⁶.◝◝◝◝\0\0\0\0²1ᶜ2⁶.\0\0\0\0\0@\0\0⁸⁶-#ᶜ4⁶.ヲヲヲ||<<<⁸⁶-#ᶜ5⁶.⁷⁷⁷⬇️\0\0@b²1⁶.◝◝◝³\0\0\0\0⁶.ユヲンヲ\0\0\0\0\n     ᶜd⁶.\0\0\0\0\0\0\0█²1ᶜ5⁶.\0\0\0█ ⁸\0\0⁸⁶-#ᶜd⁶.\0\0\0\0らユ◜◝²1ᶜ5⁶.@\0\0\0\0\0\0\0⁸⁶-#ᶜd⁶.█ユュ◝◝◝◝◝²d ᶜa⁶.²²²\0\0\0⁷⁷²dᶜ1⁶.ら\0\0\0\0\0\0\0⁸⁶-#ᶜ5⁶. █\0\0\0\0\0\0²dᶜ1⁶.◝◝ュナ█\0\0\0⁸⁶-#ᶜ5⁶.\0\0\0▮@\0\0\0²dᶜ1⁶.◝◝◝◝◝ュユ\0⁸⁶-#ᶜ5⁶.\0\0\0\0\0²⁸@²dᶜ1⁶.りりりナナナナユ⁸⁶-#ᶜ4⁶.<8\0\0\0\0\0\0⁸⁶-#ᶜ5⁶.²\0 ■▮▮▮⁸⁸⁶-#ᶜ6⁶.\0²ᵉ⁶⁶⁷⁷⁷²1  \n  ²1ᶜ2⁶.\0\0\0\0\0 \0\0⁸⁶-#ᶜ4⁶.\0\0\0\0\0、◜◜⁸⁶-#ᶜ5⁶.\0\0\0\0\0@\0¹²1ᶜ4⁶.\0\0\0\0\0ヲ◝◝⁸⁶-#ᶜ5⁶.\0\0\0\0\0⁴\0\0²1ᶜ4⁶.\0\0\0\0\0\0゜?⁸⁶-#ᶜ5⁶.\0\0\0@\0⁷ @⁸⁶-#ᶜd⁶.\0\0\0█ユヲら█²1ᶜ5⁶.▮⁴¹\0\0\0\0\0⁸⁶-#ᶜd⁶.ナヲ◜◝◝◝◝◝²d   ᶜa⁶.⁷⁷⁷⁷⁷⁷⁷\0ᶜ6⁶.\0\0\0█████⁶.\0\0ᶠ◝◝◝◝◝⁶.███ナ◝◝◝◝²dᶜ1⁶.ユユら\0\0\0\0\0⁸⁶-#ᶜ5⁶.⁸⁸(⁸⁸▮ █⁸⁶-#ᶜ6⁶.⁷⁷³³⁷⁷゜?²dᶜ1⁶.◝◝◝◝ヲナ\0\0⁸⁶-#ᶜ5⁶.\0\0\0\0⁴\0█⁶²dᶜ1⁶.◝◝◝◝◝◝◝ュ⁸⁶-#ᶜ5⁶.\0\0\0\0\0\0\0²\n²1ᶜ4⁶.\0\0\0\0◝◝◝◝²1⁶.\0█ナ◜◝◝◝◝⁸⁶-#ᶜ5⁶.\0@▮¹\0\0\0\0²4   ²4⁶.\0ᶜ █\0\0\0\0⁸⁶-#ᶜd⁶.◝ユら\0\0\0\0\0²4ᶜ5⁶.\0\0\0\0¹\0⁴0⁸⁶-#ᶜd⁶.◝◝◝◝◜◜ヲら²d ᶜa⁶.\0\0\0\0\0\0\0█⁶.\0\0\0\0\0\0⁷ᶠᶜ6⁶.ららららナナナナ²6  ᶜd⁶.█\0\0\0\0\0\0\0²6ᶜ5⁶.?ヲら█████⁸⁶-#ᶜd⁶.ら⁴0\0\0\0\0\0²1ᶜ5⁶.▮a¹¹¹¹¹█⁸⁶-#ᶜd⁶.ᶠ>◜◜◜◜◜○\n²4      ⁶.█\0\0\0\0\0\0\0²4ᶜ5⁶.\0\0\0\0\0▮@\0⁸⁶-#ᶜd⁶.◝◝◜ュヲナ█\0²5ᶜa⁶.███████ら⁸⁶-#ᶜd⁶.○○○○○○?>⁸⁶-#ᶜf⁶.\0\0\0\0\0\0@\0²aᶜd⁶.ユユユユユユユユ²6⁶.ᶠᶠᶠᶠ⁷⁷⁷⁷   ²6ᶜ4⁶.\0\0\0\0████⁸⁶-#ᶜ5⁶.██らら````⁸⁶-#ᶜd⁶.\0@\0 \0\0▮▮²4ᶜ5⁶. ¹\0\0\0\0\0\0⁸⁶-#ᶜd⁶.゜\0\0\0\0\0\0\0\n²4        ²4ᶜ5⁶.²\0\0\0\0\0\0\0⁸⁶-#ᶜa⁶.らら█\0\0\0\0\0⁸⁶-#ᶜd⁶.< \0\0\0\0\0\0²4ᶜ9⁶.\0\0\0⁶\0\0\0\0⁸⁶-#ᶜa⁶.ᶠᶠᶠ\0\0\0\0\0⁸⁶-#ᶜd⁶.ユユユ\0\0\0\0\0²4ᶜ6⁶.ヲヲヲヲヲヲヲユ⁸⁶-#ᶜd⁶.⁷⁷⁷\0\0\0\0⁸²6   ²6ᶜ4⁶.█ららららナナナ⁸⁶-#ᶜ5⁶.p0000「「「⁸⁶-#ᶜd⁶.\0\0\0⁸⁸\0\0⁴²4 \n          ²4ᶜ6⁶.ユユユ\0\0\0\0\0⁸⁶-#ᶜd⁶.\0\0\0ユ\0\0\0\0²4ᶜ6⁶.◝◝◝ヲ\0\0\0\0⁸⁶-#ᶜd⁶.\0\0\0⁷\0\0\0\0²4ᶜ6⁶.◝?゜\0\0\0\0\0⁸⁶-#ᶜd⁶.\0ら\0゜\0\0\0\0²4ᶜ6⁶.◝ュ\0\0\0\0\0\0⁸⁶-#ᶜd⁶.\0³█\0\0\0\0\0²4ᶜ5⁶.ᶜᶜ⁶\0\0\0\0\0⁸⁶-#ᶜ6⁶.³¹¹\0\0\0\0\0⁸⁶-#ᶜd⁶.\0²\0\0\0\0\0\0²4 \n                \n                \n                                                             ",
   0,0)
 end
