@@ -6,6 +6,13 @@ __lua__
 
 -- globals
 
+-- make an oop-like object.
+-- see www.lexaloffle.com/bbs/?tid=49047
+function obj(t)
+ return setmetatable(t,
+  {__index=_ENV})
+end
+
 function clamp(x,low,hi)
  return max(low,min(hi,x))
 end
