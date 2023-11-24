@@ -17,10 +17,6 @@ function clamp(x,low,hi)
  return max(low,min(hi,x))
 end
 
-function spr_addr(sid)
- return 512*(sid\16)+4*(sid%16)
-end
-
 function sprxy(sid)
  return 8*(sid%16),8*(sid\16)
 end
@@ -170,9 +166,6 @@ sid_rock2a=7
 sid_rock2b=8
 sid_rock2c=23
 sid_rock2d=24
-sid_cloud1=65
-sid_cloud2=67
-sid_cloud3=68
 sid_car=129
 sid_car_bumper2=141
 sid_car_debris={170,171,172,186,187,188}
@@ -240,7 +233,6 @@ end
 
 function _draw()
  mode_obj:draw()
- --print(game_mode,1,1,0)
  if next_mode~=game_mode then
   game_mode=next_mode
   mode_obj=
@@ -611,7 +603,6 @@ function match3_draw(_ENV)
                   or sid_rock1]
   local crx,cry=bx+8*(cx+r[6])-8,
                 by+8*(cy+r[7])-8
-  
   crs_t = selecting
           and 1+crs_t%4 or 1
   rect(crx,cry,crx+r[8],cry+r[8],
