@@ -644,7 +644,6 @@ function menu_enter()
   wheel_r=0,
   fade_step=0,
  })
- --music(0,2000)
  return mm
 end
 
@@ -704,7 +703,6 @@ function menu_draw(_ENV)
   print("press 🅾️ to start",29,95,7)
  end
  -- debug
- drawtl()
 end
 -->8
 -- debug
@@ -1674,6 +1672,8 @@ function vt_draw(_ENV)
   0,0)
 end
 
+-- stuff things don't come in
+
 function isotrifill(x0,y0,x1,y2,c)
  local w,h=1+x1-x0,1+y2-y0
  local dx=w*0.5/h
@@ -1684,7 +1684,26 @@ function isotrifill(x0,y0,x1,y2,c)
  end
 end
 
-function drawtl()
+
+tl_phase=0
+function tl_enter()
+ music(63)
+ tl_phase=0
+end
+function tl_update()
+ if tl_phase==0 and stat(53)==21 then
+  tl_phase=1
+ elseif tl_phase==1 then
+  spk8_whisper=1
+  spk8_rate=0.5
+  say("_/-1.67/_/t/-1.31/3/aa/-1.59/_/p/-1.58/ih/-1.68/_/k/-1.20/-3/l/1.27/-3/ao/1.81/-3/r/-1.55/-3/d/1.99/-3/z")
+  tl_phase=2
+ elseif tl_phase==2 and not speaking() then
+  stop()
+ end
+end
+
+function tl_draw()
  cls(0)
  -- pole left cap
  clip(0,8,8,8)
@@ -1744,7 +1763,6 @@ function drawtl()
  -- text
  print("\^wtopic",44,49,0)
  print("\^wlords",45,60,0)
- if (not speaking()) say("_/-1.67/_/t/-1.31/3/aa/-1.59/_/p/-1.58/ih/-1.68/_/k/-1.20/-3/l/1.27/-3/ao/1.81/-3/r/-1.55/-3/d/1.99/-3/z")
 end
 __gfx__
 00000000955299999999999999999999999999999999999944442444999999999999999999939999999339999999999999999999955299999559999900000000
