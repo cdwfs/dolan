@@ -155,7 +155,6 @@ sid_running={103,71,71,71,71,71,71,103}
 sid_sun=101
 sid_dirt_pile=65
 sid_walking={67,68}
-sid_dolan_head=137
 sid_filldirt={80,96,112}
 sid_fillroad=56
 -- rotating sprite map locations
@@ -1164,6 +1163,10 @@ function cb_enter(args)
    idle_f={anim({11,43},8),"idle_f"},
    drop={anim({11,43,3,35,33},4),"idle_e"},
   },"walk"),
+  dolan_ag=animgraph({
+   idle={anim({137},60),"idle"},
+   anger={anim({184,185},8),"anger"},
+  },"idle"),
   carrying=false,
   window_r={30,1,38,1},
   armx=34,
@@ -1185,6 +1188,7 @@ function cb_enter(args)
   fade_step=fade_max_step,
   panx=0,
   dpanx=0,
+  msgt=0,
   dirtfalls={},
   bullets={},
   particles={},
@@ -1253,6 +1257,7 @@ function cb_update(_ENV)
       diggerx=bx-12+8*cx
       dpanx=-0.25
       digger_ag:to("walk")
+      dolan_ag:to("anger")
      end
     else
      -- place falling dirt.
@@ -1342,9 +1347,7 @@ function cb_update(_ENV)
   -- pan camera until pit is
   -- offscreen
   panx+=dpanx
-  if panx==-100 and ee_thing1 then
-   ee_thing1()
-  elseif panx<-128 then
+  if panx<-128 then
    dpanx=0
   end
   -- walk until digger is offscreen
@@ -1456,7 +1459,7 @@ function cb_draw(_ENV)
  spr(sid_car+2,
    carx+16,cary,6,3)
  -- draw car window and dolan
- clip(carx+window_r[1],
+ clip(carx-panx+window_r[1],
       cary+window_r[2],
       1+window_r[3]-window_r[1],
       1+window_r[4]-window_r[2])
@@ -1465,7 +1468,7 @@ function cb_draw(_ENV)
           carx+window_r[3],
           cary+window_r[4],
           -16)
- spr(sid_dolan_head,
+ spr(dolan_ag:nextv(),
      carx+window_r[1],
      cary+window_r[2])
  clip()
@@ -1534,6 +1537,20 @@ function cb_draw(_ENV)
   -- digger walks to the left
   spr(digger_ag:nextv(),
       diggerx,by-16,1,2,true)
+  local dolanx,dolany=carx+window_r[1],
+                      cary+window_r[2]
+  if dolanx-panx>90 then
+   local mrx0,mry0=dolanx-56,
+                   dolany-32
+   local mrx1,mry1=mrx0+52,mry0+22
+   local msg="for the love\nof god,\nrobinson!"
+   rectfill(mrx0+1,mry0+1,
+            mrx1+1,mry1+1,0)
+   rectfill(mrx0,mry0,mrx1,mry1,7)
+   if (msgt==0 and ee_thing1) ee_thing1()
+   msgt+=1
+   print(sub(msg,1,msgt\4),mrx0+4,mry0+4,0)
+  end
  end
  -- debug
  --[[
