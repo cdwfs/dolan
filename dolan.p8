@@ -240,6 +240,7 @@ function match3_enter()
   by=(16-k_board_h)*8,
   scrollx=2,
   interactive=false,
+  afk=true,
   crs_fills={
    0x1107.26e1,0x1107.4678,
    0x1107.8764,0x1107.1e62},
@@ -431,6 +432,7 @@ function match3_update(_ENV)
    runnerx=bx-16+8*cx,
    dirtx=dirtx,
    dirth=dirth,
+   afk=afk,
   })
  end
  local mode_t=mode_timer/mode_timer_max
@@ -483,6 +485,7 @@ function match3_update(_ENV)
  if (btnp(⬅️)) dx-=1
  if (btnp(➡️)) dx+=1
  if (dx~=0) dy=0 -- no diagonals!
+ if (dx~=0 or dy~=0) afk=false
  local mi=2*dx+dy+3
  local mdist=mi~=0 and r[mi]
  local cx2=clamp(cx+dx*mdist,1,w)
@@ -856,7 +859,12 @@ function cf_enter(args)
   dirtx=args.dirtx,
   dirth=args.dirth,
   runnery=args.by-16,
+  afk=args.afk,
   runner_t=1,
+  digger_ag=animgraph({
+   dig={anim(sid_digging,4),"dig"},
+   splat={anim({75,107,77,109,79},{16,16,4,4,4000}),"dig"},
+  },"dig"),
   collmasks={},
   carx=128,
   cary=args.by-27, -- slightly above road
@@ -1061,11 +1069,17 @@ function cf_update(_ENV)
  -- animate runner
  runner_t=1+runner_t%8
  runnerx-=2
+ if afk and carx==bx+64
+    and digger_ag.sn~="splat" then
+  digger_ag:to("splat")
+ end
  -- did the car drive right over
  -- the pit?
  if carx<-100 then
   set_next_mode("gameover",{
-   reason="dig a pit to trap the cadillac!",
+   reason=afk
+      and "is your gamepad even plugged in?"
+      or "dig a pit to trap the cadillac!",
   })
  end
 end
@@ -1099,9 +1113,15 @@ function cf_draw(_ENV)
  else
   spr(sid_car,carx,cary,8,3)
  end
- -- draw running digger
- spr(sid_running[runner_t],
-     runnerx,runnery-5*abs(sin(runner_t/16)),2,2)
+ if afk then
+  -- draw splatting digger
+  spr(digger_ag:nextv(),
+      bx-4,by-16,2,2)
+ else
+  -- draw running digger
+  spr(sid_running[runner_t],
+      runnerx,runnery-5*abs(sin(runner_t/16)),2,2)
+ end
  -- draw dirt pile
  local dsx,dsy=sprxy(sid_dirt_pile)
  sspr(dsx,dsy,16,16,dirtx,by,
