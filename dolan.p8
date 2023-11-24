@@ -664,12 +664,6 @@ function menu_update(_ENV)
   sfx(sfx_dope1,0)
   scrollx=2
  end
- -- tmp music experiment:
- -- remove loop end from current
- -- music pattern
- if btnp(❎) then
-  poke(0x3101,0x42)
- end
 end
 
 function menu_draw(_ENV)
