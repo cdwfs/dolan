@@ -1372,7 +1372,10 @@ function cb_update(_ENV)
   -- pan camera until pit is
   -- offscreen
   panx+=dpanx
-  if panx<-128 then
+  if panx==-100 then
+   _g.spk8_whisper=2
+   say("_/f/-1.26/ao/-1.09/r/-1.12/dh/-1.47/ah/l/-1.18/3/ah/-1.05/v/-1.18/ah/-1.05/v/-1.69/_/g/-1.24/3/aa/-1.71/_/d/_/-1.29/r/-1.41/3/aa/-1.62/_/b/-1.61/ah/-1.18/n/-1.24/s/-1.61/ah/-1.06/n")
+  elseif panx<-128 then
    dpanx=0
   end
   -- walk until digger is offscreen
