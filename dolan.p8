@@ -118,12 +118,11 @@ end
 function rspr(x,y,rot,mx,my,w,flip,scale)
  scale=scale or 1
  w*=scale*4
- local cs, ss = cos(rot)*.125/scale,sin(rot)*.125/scale
- local sx, sy = mx+cs*-w, my+ss*-w
- local hx = flip and -w or w
- local halfw = -w
- for py=y-w, y+w do
-  tline(x-hx, py, x+hx, py, sx-ss*halfw, sy+cs*halfw, cs, ss)
+ local cs,ss=cos(rot)*.125/scale,sin(rot)*.125/scale
+ local sx,sy=mx+cs*-w,my+ss*-w
+ local hx,halfw=flip and -w or w,-w
+ for py=y-w,y+w do
+  tline(x-hx,py,x+hx,py,sx-ss*halfw,sy+cs*halfw,cs,ss)
   halfw+=1
  end
 end
@@ -285,12 +284,6 @@ function match3_enter()
   },"dig"),
   dirtx=4,
   dirth=0,
-  clampx=function(this,x)
-   return max(1,min(this.w,x))
-  end,
-  clampy=function(this,y)
-   return max(1,min(this.h,y))
-  end,
  })
  -- populate grid
  for y=1,m3.h do
@@ -315,7 +308,6 @@ function match3_enter()
    end
   end
  end
- -- todo: place rocks
  m3.grid[1][3]=sid_rock1
  m3.grid[1][6]=sid_rock2a
  m3.grid[1][7]=sid_rock2b
@@ -331,7 +323,7 @@ function clear_matches(_ENV,skip_fx)
   local row=grid[y]
   for x=1,w do
    local s=row[x]
-   if s==sid_empty then goto match_end end
+   if (s==sid_empty) goto match_end
    local n=1 -- find x match
    for mx=x+1,w do
     if (row[mx]~=s) break
@@ -502,15 +494,15 @@ function match3_update(_ENV)
                  or sid_rock1]
  -- move cursor
  local dx,dy=0,0
- if btnp(⬆️) then dy-=1 end
- if btnp(⬇️) then dy+=1 end
- if btnp(⬅️) then dx-=1 end
- if btnp(➡️) then dx+=1 end
+ if (btnp(⬆️)) dy-=1
+ if (btnp(⬇️)) dy+=1
+ if (btnp(⬅️)) dx-=1
+ if (btnp(➡️)) dx+=1
  if (dx~=0) dy=0 -- no diagonals!
  local mi=2*dx+dy+3
  local mdist=mi~=0 and r[mi]
- local cx2=m3:clampx(cx+dx*mdist)
- local cy2=m3:clampy(cy+dy*mdist)
+ local cx2=clamp(cx+dx*mdist,1,w)
+ local cy2=clamp(cy+dy*mdist,1,h)
  if cx2~=cx or cy2~=cy then
   local move_snd=sfx_click
   -- swap gems before moving cursor
@@ -527,25 +519,25 @@ function match3_update(_ENV)
     end
    elseif isrock then -- 2x2 rock
     -- get upper-left block coords
-    local bx,by=cx+r[6],cy+r[7]
+    local ux,uy=cx+r[6],cy+r[7]
     -- get coords for cells to check for empty
-    local ex,ey=bx+dx+(dx>0 and 1 or 0),
-                by+dy+(dy>0 and 1 or 0)
+    local ex,ey=ux+dx+(dx>0 and 1 or 0),
+                uy+dy+(dy>0 and 1 or 0)
     local ex2,ey2=ex+abs(dy),
                   ey+abs(dx)
     -- only swap if both dest cells are empty
     if grid[ey][ex]==sid_empty and
        grid[ey2][ex2]==sid_empty then
-     grid[by][bx]=sid_empty
-     grid[by][bx+1]=sid_empty
-     grid[by+1][bx]=sid_empty
-     grid[by+1][bx+1]=sid_empty
-     bx+=dx
-     by+=dy
-     grid[by][bx]=sid_rock2a
-     grid[by][bx+1]=sid_rock2b
-     grid[by+1][bx]=sid_rock2c
-     grid[by+1][bx+1]=sid_rock2d
+     grid[uy][ux]=sid_empty
+     grid[uy][ux+1]=sid_empty
+     grid[uy+1][ux]=sid_empty
+     grid[uy+1][ux+1]=sid_empty
+     ux+=dx
+     uy+=dy
+     grid[uy][ux]=sid_rock2a
+     grid[uy][ux+1]=sid_rock2b
+     grid[uy+1][ux]=sid_rock2c
+     grid[uy+1][ux+1]=sid_rock2d
      cx2,cy2=cx+dx,cy+dy -- only move one tile
      settling=true
     else
