@@ -8,6 +8,7 @@ __lua__
 
 -- make an oop-like object.
 -- see www.lexaloffle.com/bbs/?tid=49047
+_g=_ENV
 function obj(t)
  return setmetatable(t,
   {__index=_ENV})
