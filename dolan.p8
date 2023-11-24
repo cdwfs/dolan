@@ -102,7 +102,7 @@ function animgraph(states,start_state)
   nextv=function(_ENV)
    local v=s[1]:nextv()
    while not v do
-    s=states[s[2]]
+    s,sn=states[s[2]],s[2]
     s[1]:rewind()
     v=s[1]:nextv()
    end
