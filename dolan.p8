@@ -97,6 +97,7 @@ end
 function animgraph(states,start_state)
  return {
   states=states,
+  sn=start_state,
   s=states[start_state],
   nextv=function(_ENV)
    local v=s[1]:nextv()
@@ -108,7 +109,7 @@ function animgraph(states,start_state)
    return v
   end,
   to=function(_ENV,new_state)
-   s=states[new_state]
+   s,sn=states[new_state],new_state
    s[1]:rewind()
   end,
  }
