@@ -657,7 +657,6 @@ function menu_draw(_ENV)
  spr(sid_car,carx+cardx,
      cary,8,3)
  -- title
- --?"\^w\^t\f1\^j93dolan's\^j96\+cfcadillac\^j93\+ff\f9dolan's\^j96\+becadillac"
  print("\^w\^tdolan's",
        titlex+1+4,
        titley+1,1)
