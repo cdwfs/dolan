@@ -1186,6 +1186,8 @@ function cb_enter(args)
    pickup={anim({3,35,11,43},4),"idle_f"},
    idle_f={anim({11,43},8),"idle_f"},
    drop={anim({11,43,3,35,33},4),"idle_e"},
+   dying={anim({73,105,173},{8,8,120}),"dead"},
+   dead={anim({173},60),"dead"},
   },"walk"),
   dolan_ag=animgraph({
    idle={anim({137},60),"idle"},
@@ -1382,6 +1384,13 @@ function cb_update(_ENV)
     set_next_mode("victory")
    end
   end
+ elseif phase==3 then
+  -- getting shot to death.
+  if digger_ag.sn=="dead" then
+   set_next_mode("gameover",{
+    reason="don't get shot so much!",
+   })
+  end
  end
  -- update falling dirt
  local dirtfalls2={}
@@ -1417,10 +1426,9 @@ function cb_update(_ENV)
    -- hit player
    hit=true
    health-=1
-   if health<=0 then
-    set_next_mode("gameover",{
-     reason="don't get shot so much!",
-    })
+   if health<=0 and phase~=3 then
+    digger_ag:to("dying")
+    phase=3
    end
    for i=1,5 do
     add(particles,{
@@ -1575,6 +1583,11 @@ function cb_draw(_ENV)
    msgt+=1
    print(sub(msg,1,msgt\4),mrx0+4,mry0+4,0)
   end
+ elseif phase==3 then
+  -- getting shot to death
+  spr(digger_ag:nextv(),
+      bx-12+8*cx,
+      by-16,2,2,diggerf)
  end
  -- debug
  --[[
