@@ -1512,11 +1512,11 @@ function cb_draw(_ENV)
   -- draw walking
   spr(digger_ag:nextv(),
       diggerx,by-16,1,2)
- elseif phase==1 then
+ elseif phase==1 or phase==3 then
   -- draw health
   print(sub("♥♥♥",1,health),
    100,4,8)
-  if reloadc<=0 then
+  if health>0 and reloadc<=0 then
    -- draw dolan arm
    local ax,ay=carx+armx,
                cary+army
@@ -1583,11 +1583,6 @@ function cb_draw(_ENV)
    msgt+=1
    print(sub(msg,1,msgt\4),mrx0+4,mry0+4,0)
   end
- elseif phase==3 then
-  -- getting shot to death
-  spr(digger_ag:nextv(),
-      bx-12+8*cx,
-      by-16,2,2,diggerf)
  end
  -- debug
  --[[
