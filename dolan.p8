@@ -196,10 +196,11 @@ palt_default=0x0040
 -- game modes
 -- don't edit these directly;
 -- call set_next_mode() instead.
-modes={}
+mode_enters={}
 game_mode=""
 next_mode=""
 next_mode_enter_args={}
+mode_obj=nil
 
 -- switch to a new game mode.
 -- args is passed to the new
@@ -215,31 +216,13 @@ function set_next_mode(mode,args)
 end
 
 function _init()
- modes={
-  menu={
-   enter=menu_enter,
-   obj=mm,
-  },
-  match3={
-   enter=match3_enter,
-   obj=nil,
-  },
-  carfall={
-   enter=cf_enter,
-   obj=nil,
-  },
-  carbury={
-   enter=cb_enter,
-   obj=nil,
-  },
-  gameover={
-   enter=go_enter,
-   obj=nil,
-  },
-  victory={
-   enter=vt_enter,
-   obj=nil,
-  },
+ mode_enters={
+  menu=menu_enter,
+  match3=match3_enter,
+  carfall=cf_enter,
+  carbury=cb_enter,
+  gameover=go_enter,
+  victory=vt_enter,
  }
  game_mode="menu"
  next_mode=game_mode
@@ -248,21 +231,20 @@ function _init()
  palt(palt_default) -- orange transparent by default
  cls(0)
  bg_init()
- modes[game_mode].obj=
-  modes[game_mode].enter()
+ mode_obj=mode_enters[game_mode]()
 end
 
 function _update60()
- modes[game_mode].obj:update()
+ mode_obj:update()
 end
 
 function _draw()
- modes[game_mode].obj:draw()
+ mode_obj:draw()
  --print(game_mode,1,1,0)
  if next_mode~=game_mode then
   game_mode=next_mode
-  modes[game_mode].obj=
-   modes[game_mode].enter(next_mode_enter_args)
+  mode_obj=
+   mode_enters[game_mode](next_mode_enter_args)
  end
 end
 -->8
