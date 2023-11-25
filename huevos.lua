@@ -37,25 +37,28 @@ end
 
 mode_tl={}
 function tl_enter()
- mode_tl={
+ mode_tl=obj({
+  update=tl_update,
+  draw=tl_draw,
   phase=0,
- }
+ })
  music(63)
+ return mode_tl
 end
-function tl_update()
- if mode_tl.phase==0 and stat(53)==21 then
-  mode_tl.phase=1
- elseif mode_tl.phase==1 then
-  spk8_whisper=1
-  spk8_rate=0.5
+function tl_update(_ENV)
+ if phase==0 and stat(53)==21 then
+  phase=1
+ elseif phase==1 then
+  _g.spk8_whisper=1
+  _g.spk8_rate=0.5
   say("_/-1.67/_/t/-1.31/3/aa/-1.59/_/p/-1.58/ih/-1.68/_/k/-1.20/-3/l/1.27/-3/ao/1.81/-3/r/-1.55/-3/d/1.99/-3/z")
-  mode_tl.phase=2
+  phase=2
  elseif mode_tl.phase==2 and not speaking() then
-  stop()
+  set_next_mode("about")
  end
 end
 
-function tl_draw()
+function tl_draw(_ENV)
  cls(0)
  -- pole left cap
  clip(0,8,8,8)

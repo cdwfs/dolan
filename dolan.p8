@@ -199,6 +199,7 @@ function _init()
   gameover=go_enter,
   victory=vt_enter,
   about=ab_enter,
+  thing=tl_enter,
  }
  game_mode="menu"
  next_mode=game_mode
@@ -1726,6 +1727,8 @@ function ab_update(_ENV)
  if btnp(❎) then
   sfx(sfx_select,0)
   set_next_mode("menu")
+ elseif btnp(🅾️) and ee_init then
+  set_next_mode("thing")
  end
 end
 
