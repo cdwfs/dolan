@@ -1126,7 +1126,8 @@ function cb_enter(args)
   },"walk"),
   dolan_ag=animgraph({
    idle={anim({137},60),"idle"},
-   anger={anim({184,185},8),"anger"},
+   anger={anim({182,183,182,183,},24),"shake"},
+   shake={anim({184,185},8),"shake"},
   },"idle"),
   carrying=false,
   window_r={30,1,38,1},
