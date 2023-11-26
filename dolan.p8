@@ -18,13 +18,21 @@ function clamp(x,low,hi)
  return max(low,min(hi,x))
 end
 
+-- return pixel x,y for a sprite.
+-- useful for the sspr() function.
 function sprxy(sid)
  return 8*(sid%16),8*(sid\16)
 end
 
+-- print with a drop-shadow
 function dsprint(msg,x,y,c,cs)
  print(msg,x-1,y+1,cs)
  print(msg,x,y,c)
+end
+
+-- print centered on screen
+function cprint(msg,y,c)
+ print(msg,64-2*#msg,y,c)
 end
 
 -- i don't love this easing function,
@@ -1583,9 +1591,6 @@ function go_update(_ENV)
 end
 
 function go_draw(_ENV)
- function cprint(msg,y,c)
-  print(msg,64-2*#msg,y,c)
- end
  cls(0)
  fade(fade_step)
  cprint("game over",56,8)
