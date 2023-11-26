@@ -1096,7 +1096,9 @@ function cb_enter(args)
   carx=args.carx,
   cary=args.cary,
   wheel_r=args.wheel_r,
+  show_help=true,
   cx=0,
+  curs_t=0,
   cfill=0x5555,
   phase=0,
   health=3,
@@ -1144,7 +1146,19 @@ function cb_enter(args)
  return cb
 end
 
+function dropcy(cx,grid)
+ if cx<1 or cx>k_board_w then
+  return 0
+ end
+ for y=1,k_board_h do
+  if grid[y][cx]~=sid_empty then
+   return y-1
+  end
+ end
+end
+
 function cb_update(_ENV)
+ curs_t+=1
  bg:update(-dpanx)
  if phase==0 then
   -- intro cutscene, not interactive yet
@@ -1169,6 +1183,7 @@ function cb_update(_ENV)
   end
   cx=cx2
   -- handle dirt pickup/drop
+  local dcy=dropcy(cx,grid)
   if btnp(🅾️) then
    if not carrying
       and cx<=0 then
@@ -1177,14 +1192,13 @@ function cb_update(_ENV)
     digger_ag:to("pickup")
     dirth-=1
     sfx(sfx_select,0)
-   elseif carrying
-          and cx>=1 and cx<=w
-          and grid[1][cx]==sid_empty then
+   elseif carrying and dcy>0 then
     -- drop dirt
     carrying=false
+    show_help=false
     digger_ag:to("drop")
     sfx(sfx_dope1,0)
-    if grid[2][cx]~=sid_empty then
+    if dcy==1 then
      -- place road
      grid[1][cx]=sid_fillroad
      -- update collmask
@@ -1211,13 +1225,6 @@ function cb_update(_ENV)
      -- place falling dirt.
      -- figure out how far it
      -- needs to fall.
-     local ecy=h
-     for y=2,h do
-      if grid[y][cx]~=sid_empty then
-       ecy=y-1
-       break
-      end
-     end
      add(dirtfalls,{
       px=bx-8+cx*8,
       py=by-4,
@@ -1225,8 +1232,8 @@ function cb_update(_ENV)
       s=rnd(sid_filldirt),
       ey=ey,
       ecx=cx,
-      ecy=ecy,
-      ey=by-8+8*ecy,
+      ecy=dcy,
+      ey=by-8+8*dcy,
      })
     end
    else
@@ -1471,21 +1478,30 @@ function cb_draw(_ENV)
    pset(p.px,p.py+1,1)
   end
   -- draw cursor
-  fillp(0x5c5c.8)
-  if carrying
-     and cx>=1 and cx<=cb.w then
+  local dcy=dropcy(cx,grid)
+  if carrying and dcy>0 then
    -- draw cursor on grid column
-   local lx,ly=bx+cx*8-8,by
-   line(lx,ly,lx+7,ly,7)
-  elseif cx<=0
-         and not carrying then
-   -- highlight dirt pile
-   rect(dirtx,by,
-        dirtx+15,by-16,7)
+   local lx,ly,lt=bx+cx*8-8,
+                  by+dcy*8-8,
+                  (curs_t\4)%4
+   rect(lx+lt,ly+lt,
+        lx+7-lt,ly+7-lt,7)
+   if show_help then
+    dsprint("drop dirt to bury dolan",24,by-24,10,0)
+   end
   else
-   -- no visible cursor
+   if show_help then
+    dsprint("pick\n up\ndirt",2,by+8,10,0)
+   end
+   if cx<=0
+         and not carrying then
+    -- highlight dirt pile
+    fillp(0x5c5c.8)
+    rect(dirtx,by,
+        dirtx+15,by-16,7)
+    fillp()
+   end
   end
-  fillp()
  elseif phase==2 then
   fade(fade_step)
   -- digger walks to the left
