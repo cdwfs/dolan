@@ -599,10 +599,11 @@ function match3_draw(_ENV)
                   or sid_rock1]
   local crx,cry=bx+8*(cx+r[6])-8,
                 by+8*(cy+r[7])-8
-  crs_t = selecting
-          and 1+crs_t%4 or 1
-  rect(crx,cry,crx+r[8],cry+r[8],
-       crs_fills[crs_t])
+  crs_t=selecting
+        and (1+crs_t%4) or 1
+  local cfill=selecting and
+              crs_fills[crs_t] or 7
+  rect(crx,cry,crx+r[8],cry+r[8],cfill)
   poke(0x5f34,0)
   fillp()
  end
