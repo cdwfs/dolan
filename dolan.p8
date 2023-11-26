@@ -422,9 +422,9 @@ function settle_grid(_ENV)
 end
 
 function match3_update(_ENV)
- -- debug temp
- if btnp(❎) then
-  mode_timer=mode_timer_max
+ -- fast-forward
+ if btn(❎) then
+  mode_timer=min(mode_timer+5,mode_timer_max)
  end
  -- update timer/sun
  mode_timer+=1
@@ -606,8 +606,10 @@ function match3_draw(_ENV)
  for g in all(pgems) do
   spr(g.s,g.px,g.py)
  end
- -- debug
- print("temp: press ❎ to\nforce car to arrive",1,1,0)
+ -- fast-forward
+ if interactive then
+  print("❎",bg.sunx-3,bg.suny-2,0)
+ end
 end
 -->8
 -- main menu
