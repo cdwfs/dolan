@@ -673,10 +673,10 @@ function menu_update(_ENV)
       (128-carx)/96)\1,
   0,15))
  if carx>128 then
-  set_next_mode("match3")
-  fade()
   engine_vol(0)
   sfx(sfx_engine,-2)
+  set_next_mode("match3")
+  fade()
  end
  bg:update(scrollx)
  wheel_r=(wheel_r+.1793)%1
@@ -687,6 +687,7 @@ function menu_update(_ENV)
   sfx(sfx_dope1,0)
   sfx(sfx_engine,-2)
   set_next_mode("about")
+  fade()
  end
 end
 
