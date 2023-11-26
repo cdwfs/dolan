@@ -1058,8 +1058,6 @@ function cf_draw(_ENV)
   spr(p.s,p.px,p.py)
  end
  -- debug
- print("temp: press ❎ to\nadvance to car-burying",1,1,0)
-     
  --[[
  -- debug collision points
  for p in all(cf.coll_pts) do
