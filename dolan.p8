@@ -45,6 +45,24 @@ function easeoutback(x,a,b)
  return 1+c3*t1*t1*t1+c1*t1*t1
 end
 
+-- adjust the engine volume
+-- using a range from 0 to 23.
+-- actually sets a combination
+-- of volume and damping to
+-- give a smoother gradient.
+function engine_vol(lvl)
+ local bp,vol,damp=0x3201+sfx_engine*68,
+                   lvl\3,2-lvl\8
+ -- set damping
+ local b=peek(bp+63)
+ local det,rev=b\8%3,b\24%3
+ poke(bp+63,(b&7)+8*det+24*rev+72*damp)
+ -- set volume of all notes
+ vol*=2
+ for a=bp,bp+62,2 do
+  poke(a,peek(a)&0xf1|vol)
+ end
+end
 
 function collides(collmasks,px,py)
  -- if offscreen, assume
@@ -629,6 +647,7 @@ mm={}
 
 function menu_enter()
  cls(0)
+ sfx(sfx_engine,1)
  mm=obj({
   update=menu_update,
   draw=menu_draw,
@@ -649,9 +668,15 @@ function menu_update(_ENV)
  fade_step=min(fade_max_step,
                fade_step+1)
  fade(fade_step)
+ engine_vol(clamp(
+  23*min(fade_step/fade_max_step,
+      (128-carx)/96)\1,
+  0,15))
  if carx>128 then
   set_next_mode("match3")
   fade()
+  engine_vol(0)
+  sfx(sfx_engine,-2)
  end
  bg:update(scrollx)
  wheel_r=(wheel_r+.1793)%1
@@ -660,6 +685,7 @@ function menu_update(_ENV)
   scrollx=2
  elseif btnp(❎) then
   sfx(sfx_dope1,0)
+  sfx(sfx_engine,-2)
   set_next_mode("about")
  end
 end
@@ -845,6 +871,8 @@ function cf_enter(args)
   end
   cf.collmasks[row]=mask
  end
+ engine_vol(0)
+ sfx(sfx_engine,1)
  return cf
 end
 
@@ -885,6 +913,10 @@ end
 
 function cf_update(_ENV)
  bg:update()
+ -- update engine noise
+ local evol=clamp(
+  23*(96-abs(carx-32))/96,0,23)
+ engine_vol(evol\1)
  -- update debris
  local outp={}
  for p in all(debris) do
@@ -935,6 +967,7 @@ function cf_update(_ENV)
   end
  end
  if xfix~=0 then
+  sfx(sfx_engine,-2)
   carx2+=xfix
   damaged=true
   -- flip velocity
