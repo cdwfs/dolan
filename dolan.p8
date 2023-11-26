@@ -22,6 +22,11 @@ function sprxy(sid)
  return 8*(sid%16),8*(sid\16)
 end
 
+function dsprint(msg,x,y,c,cs)
+ print(msg,x-1,y+1,cs)
+ print(msg,x,y,c)
+end
+
 -- i don't love this easing function,
 -- but it'll work for now
 function easeoutback(x,a,b)
@@ -644,11 +649,6 @@ function menu_update(_ENV)
   sfx(sfx_dope1,0)
   set_next_mode("about")
  end
-end
-
-function dsprint(msg,x,y,c,cs)
- print(msg,x-1,y+1,cs)
- print(msg,x,y,c)
 end
 
 function menu_draw(_ENV)
@@ -1713,7 +1713,7 @@ function ab_enter(args)
   screen=1,
   story="you are robinson.\n\nyou and elizabeth lived normal\nlives, until she witnessed a\nterrible crime. criminal boss\njimmy dolan had her murdered\nto prevent her from testifying\nagainst him.\n\nyou are consumed by thoughts\nof revenge, but dolan rarely\nleaves his near-indestructible\ncadillac.\n\nnow you have your chance.\n\ndolan and his cadillac drive\nthe empty desert roads between\nlas vegas and los angeles. you\nhave taken a job as a road\nworker, assigned to repairs\nalong this lonely stretch of\nhighway. with some hard work\nand a bit of luck, you can\nmake sure dolan is never seen\nagain, entombed within the\nsame cadillac he trusts to\nprotect him from his enemies.",
   scroll=0,
-  scroll_max={60,0,0},
+  scroll_max={60,60,0},
   screens={"story","help","credits"},
  })
  return ab
@@ -1722,8 +1722,8 @@ end
 function ab_update(_ENV)
  if (btnp(⬅️)) scroll=0 screen=1+(screen+1)%3 sfx(sfx_click,0)
  if (btnp(➡️)) scroll=0 screen=1+screen%3 sfx(sfx_click,0)
- if (btnp(⬆️)) scroll=max(0,scroll-2)
- if (btnp(⬇️)) scroll=min(scroll_max[screen],scroll+2)
+ if (btn(⬆️)) scroll=max(0,scroll-1)
+ if (btn(⬇️)) scroll=min(scroll_max[screen],scroll+1)
  if btnp(❎) then
   sfx(sfx_select,0)
   set_next_mode("menu")
@@ -1741,30 +1741,40 @@ function ab_draw(_ENV)
  print(mnext,124-4*#mnext,0,7)
  print("⬆️⬇️scroll",0,122,7)
  print("❎back",104,122,7)
- rectfill(0,8,127,119,5)
+ rectfill(0,8,127,119,1)
  clip(0,8,128,110)
  camera(0,scroll)
  if screen==1 then
-  print(story,2,10,7)
+  dsprint(story,2,10,7,0)
   --spr(67,80,10,1,2)
  elseif screen==2 then
-  print("here's how to play!\n\nfirst, match rows of three gems\nto clear them and dig a hole.",2,10,7)
   -- gems
+  dsprint("here's how to play!\n\nfirst, match rows of three gems\nto clear them and dig a hole.",2,10,7,0)
   for i,s in pairs(sid_gems) do
-   spr(s,12+12*i,36)
+   spr(s,28+12*i,36)
   end
-  print("the hole must be deep enough\nto contain dolan's cadillac.",2,48,7)
   -- car
-  rspr(12+11,85,0,
+  dsprint("the hole must be deep enough\nto contain dolan's cadillac.",2,48,7,0)
+  rspr(28+11,85,0,
        m_wheelx,m_wheely,m_wheelw,
        true,0.75)
-  rspr(12+11+36,85,0,
+  rspr(28+11+36,85,0,
        m_wheelx,m_wheely,m_wheelw,
        true,0.75)
-  spr(sid_car,12,64,8,3)
-		print("stones can't be cleared, but\nthey can be pushed out of the way.",2,92,7)
+  spr(sid_car,28,64,8,3)
+  -- stones
+		dsprint("stones can't be cleared, but\nthey can be pushed out of the\nway.",2,92,7,0)
+  spr(sid_rock1,48,116)
+  spr(sid_rock2a,60,116,2,2)
+  -- sun
+  dsprint("dolan's cadillac will arrive\nsoon, so make sure your pit\ntrap is ready before the sun\ncrosses the sky. then refill\nthe pit from your dirt pile to\nbury dolan where nobody will\never find him!",2,136,7,0)
  elseif screen==3 then
-  print("here's the credits",2,10,7)
+  dsprint("code, music: cort stratton",2,10,7,0)
+  dsprint("  pixel art: donald conrad",2,18,7,0)
+  dsprint(" additional\ngame design: peter m.j. gross",2,26,7,0)
+  dsprint("special thx: lesley, casey, jim",2,42,7,0)
+  dsprint("bitterlyindifferent.itch.io",8,58,12,0)
+  dsprint("festervaunt.itch.io",24,66,12,0)
  end
  clip()
  camera()
