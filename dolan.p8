@@ -424,7 +424,10 @@ end
 function match3_update(_ENV)
  -- fast-forward
  if btn(❎) then
-  mode_timer=min(mode_timer+5,mode_timer_max)
+  mode_timer+=5
+  for i=1,5 do
+   bg:update()
+  end
  end
  -- update timer/sun
  mode_timer+=1
