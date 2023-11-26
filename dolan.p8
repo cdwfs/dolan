@@ -1443,8 +1443,8 @@ function cb_draw(_ENV)
       diggerx,by-16,1,2)
  elseif phase==1 or phase==3 then
   -- draw health
-  print(sub("♥♥♥",1,health),
-   100,4,8)
+  dsprint(sub("♥♥♥",1,health),
+   100,4,8,2)
   if health>0 and reloadc<=0 then
    -- draw dolan arm
    local ax,ay=carx+armx,
