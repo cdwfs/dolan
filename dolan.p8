@@ -611,7 +611,7 @@ function match3_draw(_ENV)
  end
  -- fast-forward
  if interactive then
-  print("❎",bg.sunx-3,bg.suny-2,0)
+  print("❎",bg.sunx-3,bg.suny-2,9)
  end
 end
 -->8
