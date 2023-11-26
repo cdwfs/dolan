@@ -443,7 +443,7 @@ function match3_update(_ENV)
  end
  local mode_t=mode_timer/mode_timer_max
  bg.sunx=-20+168*(mode_t)
- bg.suny=16+8*cos(mode_t)
+ bg.suny=by+48*sin(mode_t/2)
  -- scroll
  if bx<24 then
   bx=min(24,bx+scrollx)
