@@ -727,7 +727,7 @@ function menu_draw(_ENV)
        titley+12,9)
  -- menu
  local ms1,ms2="🅾️ new game",
-               "❎ about"
+               "❎ help/credits"
  if scrollx<2 then
   dsprint(ms1,40,96,7,0)
   dsprint(ms2,40,104,7,0)
@@ -1688,10 +1688,9 @@ function ab_enter(args)
   update=ab_update,
   draw=ab_draw,
   screen=1,
-  story="you are robinson.\n\nyou and elizabeth lived normal\nlives, until she witnessed a\nterrible crime. criminal boss\njimmy dolan had her murdered\nto prevent her from testifying\nagainst him.\n\nyou are consumed by thoughts\nof revenge, but dolan rarely\nleaves his near-indestructible\ncadillac.\n\nnow you have your chance.\n\ndolan and his cadillac drive\nthe empty desert roads between\nlas vegas and los angeles. you\nhave taken a job as a road\nworker, assigned to repairs\nalong this lonely stretch of\nhighway. with some hard work\nand a bit of luck, you can\nmake sure dolan is never seen\nagain, entombed within the\nsame cadillac he trusts to\nprotect him from his enemies.",
   scroll=0,
-  scroll_max={60,60,0},
-  screens={"story","help","credits"},
+  scroll_max={60,26,0},
+  screens={"help","story","credits"},
  })
  return ab
 end
@@ -1722,11 +1721,9 @@ function ab_draw(_ENV)
  clip(0,8,128,110)
  camera(0,scroll)
  if screen==1 then
-  dsprint(story,2,10,7,0)
-  --spr(67,80,10,1,2)
- elseif screen==2 then
+  -- instructions
   -- gems
-  dsprint("here's how to play!\n\nfirst, match rows of three gems\nto clear them and dig a hole.",2,10,7,0)
+  dsprint("here's how to play!\n\nmatch rows or columns of three\ngems to dig the hole.",2,10,7,0)
   for i,s in pairs(sid_gems) do
    spr(s,28+12*i,36)
   end
@@ -1744,14 +1741,20 @@ function ab_draw(_ENV)
   spr(sid_rock1,48,116)
   spr(sid_rock2a,60,116,2,2)
   -- sun
-  dsprint("dolan's cadillac will arrive\nsoon, so make sure your pit\ntrap is ready before the sun\ncrosses the sky. then refill\nthe pit from your dirt pile to\nbury dolan where nobody will\never find him!",2,136,7,0)
+  dsprint("the cadillac will arrive after\nthe sun crosses the sky. if you\ntrapped it successfully, refill\nthe pit with your dirt pile and\nbury dolan where nobody will\never find him!",
+   2,136,7,0)
+ elseif screen==2 then
+  -- story
+  dsprint("you and your wife, elizabeth\nrobinson, lived normal lives\nuntil she witnessed a terrible\ncrime. mob boss jimmy dolan had\nher murdered to keep her quiet.\n\ndolan rarely leaves his near-\nindestructible cadillac, but\nyou have a chance for revenge.\n\ndolan travels the empty desert\nroads between las vegas and los\nangeles, and you have taken a\njob as a road worker. with some\nhard work and a bit of luck,\nyou can ensure that dolan is\nnever seen again.\n\nwork quickly, and you can\nentomb him in the same cadillac\nthat he trusts to protect him\nfrom his enemies.",
+   2,10,7,0)
  elseif screen==3 then
+  -- credits
   dsprint("code, music: cort stratton",2,10,7,0)
   dsprint("  pixel art: donald conrad",2,18,7,0)
-  dsprint(" additional\ngame design: peter m.j. gross",2,26,7,0)
-  dsprint("special thx: lesley, casey, jim,\n             mindy, steve k",2,42,7,0)
-  dsprint("bitterlyindifferent.itch.io",8,58,12,0)
-  dsprint("festervaunt.itch.io",24,66,12,0)
+  dsprint(" qa, antics: peter m.j. gross",2,26,7,0)
+  dsprint("special thx: lesley, casey, jim,\n             mindy, rob, tyler,\n             josh, dan, jared c.,\n             and steve k",2,34,7,0)
+  dsprint("bitterlyindifferent.itch.io",8,62,12,0)
+  dsprint("festervaunt.itch.io",24,70,12,0)
   rectfill(0,80,35,115,6)
   spr(sid_cort,2,82,4,4)
   rectfill(52,80,78,115,6)
