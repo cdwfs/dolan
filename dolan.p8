@@ -711,17 +711,13 @@ function menu_draw(_ENV)
  spr(sid_car,carx,cary,8,3)
  -- title
  print("\^w\^tdolan's",
-       titlex+1+4,
-       titley+1,1)
+       titlex+5,titley+1,1)
  print("\^w\^tdolan's",
-       titlex+4,
-       titley,9)
+       titlex+4,titley,9)
  print("\^w\^tcadillac",
-       titlex+1,
-       titley+12+1,1)
+       titlex+1,titley+13,1)
  print("\^w\^tcadillac",
-       titlex,
-       titley+12,9)
+       titlex,titley+12,9)
  -- menu
  local ms1,ms2="🅾️ new game",
                "❎ help/credits"
@@ -881,7 +877,6 @@ function fill_car_cells(_ENV)
  -- determine which grid cells
  -- are occupied by the car.
  local hull_pts={
-  --{0,8},{8,8},{16,5},{21,0},{29,0},{37,0},{45,0},{52,0},{57,8},
   -- move points slightly inward
   -- to make sure a single pixel
   -- in a cell doesn't mark it as full
@@ -903,9 +898,6 @@ function fill_car_cells(_ENV)
      -- no, don't do this; it blocks
      -- bullets. only placed blocks
      -- should do that.
-     --local row=y+ty0-1 -- 1-based
-     --local bit=gx+tx0-2 -- 0-based
-     --cf.collmasks[row]|=1<<bit
     end
    end
   end
@@ -1255,8 +1247,7 @@ function cb_update(_ENV)
        break
       end
      end
-     if buried
-        then
+     if buried then
       phase=2
       diggerx=bx-12+8*cx
       dpanx=-0.25
