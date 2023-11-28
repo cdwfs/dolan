@@ -1260,8 +1260,8 @@ function cb_update(_ENV)
      -- place road
      grid[1][cx]=sid_fillroad
      -- update collmask
-     local row=1+by\8
-     local bit=(bx-8+8*cx)\8
+     local row,bit=1+by\8,
+                   (bx-8+8*cx)\8
      collmasks[row]|=1<<bit
      -- check for victory
      local buried=true
@@ -1713,8 +1713,8 @@ function ab_enter(args)
 end
 
 function ab_update(_ENV)
- if (btnp(⬅️)) scroll=0 screen=1+(screen+1)%3 sfx(sfx_click)
- if (btnp(➡️)) scroll=0 screen=1+screen%3 sfx(sfx_click)
+ if (btnp(⬅️)) scroll,screen=0,1+(screen+1)%3 sfx(sfx_click)
+ if (btnp(➡️)) scroll,screen=0,1+screen%3 sfx(sfx_click)
  if (btn(⬆️)) scroll=max(0,scroll-1)
  if (btn(⬇️)) scroll=min(scroll_max[screen],scroll+1)
  if btnp(❎) then
