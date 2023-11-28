@@ -39,9 +39,8 @@ end
 -- but it'll work for now
 function easeoutback(x,a,b)
  local t=clamp((x-a)/(b-a),0,1)
- local c1=1.70158
+ local c1,t1=1.70158,t-1
  local c3=c1+1
- local t1=t-1
  return 1+c3*t1*t1*t1+c1*t1*t1
 end
 
@@ -93,8 +92,7 @@ fade_max_step=14
 --fade_target_color=0
 function fade(step)
  step=(step or fade_max_step)\1
- local tbl="00000000000000000000000000000000000000000000808080808000818080800000800080808082808080008180808000008081808082858080808181818285000080818080850580808581018182850081808180800505828484818382850500818081828005058484840383850205008182818482058684840403838502050081828384828d86840404038c058d860081828384850d86880404038c058d860081828384850d8688048a8b8c0586860081828384850d0688048a8b8c8d8686008102038485860688098a8b0c8d0e8f000102030405060608090a8b0c0d0e8f000102030405060708090a0b0c0d0e0f"
- local b=1+32*(step<fade_max_step and step or fade_max_step)
+ local b,tbl=1+32*(step<fade_max_step and step or fade_max_step),"00000000000000000000000000000000000000000000808080808000818080800000800080808082808080008180808000008081808082858080808181818285000080818080850580808581018182850081808180800505828484818382850500818081828005058484840383850205008182818482058684840403838502050081828384828d86840404038c058d860081828384850d86880404038c058d860081828384850d8688048a8b8c0586860081828384850d0688048a8b8c8d8686008102038485860688098a8b0c8d0e8f000102030405060608090a8b0c0d0e8f000102030405060708090a0b0c0d0e0f"
  for c=0,15 do
   pal(c,tonum(sub(tbl,b,b+1),1),1)
   b+=2
@@ -161,8 +159,7 @@ function rspr(x,y,rot,mx,my,w,flip,scale)
  scale=scale or 1
  w*=scale*4
  local cs,ss=cos(rot)*.125/scale,sin(rot)*.125/scale
- local sx,sy=mx+cs*-w,my+ss*-w
- local hx,halfw=flip and -w or w,-w
+ local sx,sy,hx,halfw=mx+cs*-w,my+ss*-w,flip and -w or w,-w
  for py=y-w,y+w do
   tline(x-hx,py,x+hx,py,sx-ss*halfw,sy+cs*halfw,cs,ss)
   halfw+=1
@@ -215,10 +212,7 @@ sid_cort=198
 m_wheelx,m_wheely,m_wheelw=18,5,2
 m_armx,m_army,m_armw=21,5,2
 -- sprite flags
-sf_rock=0
-sf_empty=1
--- constants
-palt_default=0x0040
+sf_rock,sf_empty=0,1
 
 -- game modes
 -- don't edit these directly;
@@ -255,10 +249,8 @@ function _init()
   thing=tl_enter,
  }
  game_mode="menu"
- next_mode=game_mode
- next_mode_enter_args=nil
- --printh("****************")
- palt(palt_default) -- orange transparent by default
+ next_mode,next_mode_enter_args=game_mode,nil
+ palt(0x0040) -- orange transparent by default
  cls(0)
  bg_init()
  mode_obj=mode_enters[game_mode]()
