@@ -926,7 +926,7 @@ function cf_update(_ENV)
  for p in all(debris) do
   p.px+=p.vx
   p.py+=p.vy
-  p.vy+=1
+  p.vy+=gravity
   if p.px>-8 and p.py<128 then
    add(outp,p)
   end
@@ -957,14 +957,14 @@ function cf_update(_ENV)
    -- spawn debris particles
    -- at higher velocities
    if abs(carvx)>0.5 then
-    local pcount=1+rnd(4)\1
+    local pcount=1+rnd(15)\1
     for i=1,pcount do
      add(debris,{
       s=rnd(sid_car_debris),
       px=pxs,
       py=py,
       vx=carvx,
-      vy=-10+rnd(4),
+      vy=-3+rnd(4),
      })
     end
    end
