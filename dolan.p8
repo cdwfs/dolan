@@ -1502,12 +1502,18 @@ function cb_draw(_ENV)
    rspr(ax,ay,aimtheta,
         m_armx,m_army,m_armw)
    -- draw laser sight
+   local ldx,ldy=cos(aimtheta),
+                -sin(aimtheta)
+   local endx,endy=muzx,muzy
+   while endx>=0 and endx<128 and endy>=0 do
+    endx+=ldx
+    endy+=ldy
+    if collides(collmasks,endx,endy) then
+     break
+    end
+   end
    fillp(0.5+rnd(0xffff)\1)
-   local ldx,ldy=aimx-muzx,
-                 aimy-muzy
-   line(muzx,muzy,
-        muzx+20*ldx,
-        muzy+20*ldy,8)
+   line(muzx,muzy,endx,endy,8)
    fillp()
   end
   -- draw digger
