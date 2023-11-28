@@ -1201,6 +1201,7 @@ function dropcy(cx,grid)
    return y-1
   end
  end
+ return k_board_h
 end
 
 function cb_update(_ENV)
